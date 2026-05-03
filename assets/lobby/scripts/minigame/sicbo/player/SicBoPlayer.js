@@ -90,21 +90,21 @@
         },
         //player vao phong
         registerPlayer: function (accountInfo) {
+            if (!accountInfo) return;
+            // Defensive: server bot/user co the bcast Nickname (chuan PascalCase) hoac
+            // NickName (typo client cu). Fallback ca 2 + default neu null.
+            var nick = accountInfo.Nickname || accountInfo.NickName || ('user_' + (accountInfo.AccountID || ''));
             var avatarID = accountInfo.Avatar;
-            if (avatarID <= 0) {
+            if (typeof avatarID !== 'number' || avatarID <= 0) {
                 avatarID = 1;
             }
             this.avatar.setAvatar(cc.AccountController.getInstance().getAvatarImage(avatarID));
             this.nodeInfo.active = true;
-			this.nodeAvaShield.active = true;
-            this.nickName = accountInfo.NickName;
-            if (accountInfo.ServiceID) {
-                this.lbName.string = cc.Config.getInstance().formatName(accountInfo.NickName, 7);
-            } else {
-                this.lbName.string = cc.Config.getInstance().formatName(accountInfo.NickName, 10);
-            }
-			this.lbChip.string = '$ ' + cc.Tool.getInstance().formatNumberK(accountInfo.Balance);
-            this.nodeInfo.active = true;
+            this.nodeAvaShield.active = true;
+            this.nickName = nick;
+            var maxLen = accountInfo.ServiceID ? 7 : 10;
+            this.lbName.string = cc.Config.getInstance().formatName(nick, maxLen);
+            this.lbChip.string = '$ ' + cc.Tool.getInstance().formatNumberK(accountInfo.Balance || 0);
         },
 
         //player roi phong

@@ -110,6 +110,10 @@
             let pos = null;
             const listChip = this.getListChip(betSide);
             pos = this.getPostBet(betSide);
+            if (!pos) {
+                // Bet side khong co button trong prefab - tra vi tri default goc man hinh
+                return cc.v2(0, 0);
+            }
             let posEnd = pos.position;
             posEnd.y = posEnd.y + (listChip.length % this.MAX_COUNT_CHIP) * 2;
             const num = 10;
@@ -205,8 +209,15 @@
         },
 
         getPostBet: function (betSide) {
-            // return this.posBets[betSide - 1].getChildByName('layoutChipBets');
-            return this.posBets[betSide - 1]
+            // posBets index 0..N theo cc.SicBoGate* (1-based) -> truyen betSide
+            // 1-based theo client convention. Defensive null check de tranh crash
+            // khi server bcast side la (chua co button trong prefab).
+            var idx = parseInt(betSide) - 1;
+            if (idx < 0 || idx >= this.posBets.length || !this.posBets[idx]) {
+                cc.SicBoLog && cc.SicBoLog.warn('ChipsView', 'getPostBet null betSide=' + betSide + ' idx=' + idx);
+                return null;
+            }
+            return this.posBets[idx];
         },
         //Di chuyen chip cua player khi bet thanh cong
         moveChipBet: function (betValue, betSide, type, accID) {
