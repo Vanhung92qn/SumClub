@@ -71,10 +71,19 @@
 
             this.checkEnableButtonSession();
 
-            this.getAccountBetDetails(sessionInfo.SessionID);
+            // Server SicboSessionHistoryDetail dung 'SessionId' (camelCase) - khac
+            // schema sessionInfo realtime tu hub (dung 'SessionID' capital).
+            // Fallback ca 2 de tuong thich.
+            this.getAccountBetDetails(sessionInfo.SessionID || sessionInfo.SessionId);
         },
 
         getAccountBetDetails: function (sessionId) {
+            // Server tra ve field SessionID hoac SessionId tuy DTO; defensive check.
+            if (sessionId === undefined || sessionId === null || sessionId === 'undefined') {
+                cc.SicBoLog && cc.SicBoLog.warn('HistoryView', 'getAccountBetDetails called with invalid sessionId, skip');
+                return;
+            }
+            cc.SicBoLog && cc.SicBoLog.info('HistoryView', 'getAccountBetDetails sessionId=' + sessionId);
             var sBGetAccountBetHistoryCommand = new cc.SBGetAccountBetHistoryCommand;
             sBGetAccountBetHistoryCommand.execute(this, sessionId);
         },

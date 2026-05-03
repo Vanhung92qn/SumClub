@@ -32,8 +32,11 @@
         },
 
         onClickExit: function () {
-            cc.LobbyController.getInstance().destroyDynamicView(null);
-			cc.LobbyController.getInstance().offuserguest(true);
+            cc.SicBoLog && cc.SicBoLog.info('Menu', 'onClickExit');
+            // Phai truyen GameId.SICBO de LobbyView switch case match va destroy nodeSicbo.
+            // Truyen null se roi vao default branch -> khong destroy game view.
+            cc.LobbyController.getInstance().destroyDynamicView(cc.GameId.SICBO);
+            cc.LobbyController.getInstance().offuserguest(true);
         },
 		
         onClickHistory: function () {

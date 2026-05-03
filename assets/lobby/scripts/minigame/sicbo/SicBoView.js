@@ -137,6 +137,7 @@ var sicBoConfig = require('SicBoConfig');
         },
 
         onSicBoNegotiateResponse: function (response) {
+            cc.SicBoLog && cc.SicBoLog.info('Negotiate', 'response received', response);
             this.connectionToken = response.ConnectionToken;
             this.sicboHub = new cc.Hub;
             this.sicboHub.connect(this, cc.HubName.SicBoHub, response.ConnectionToken);
@@ -144,8 +145,9 @@ var sicBoConfig = require('SicBoConfig');
 
         onHubMessage: function (response) {
             if (response.M !== undefined && response.M.length > 0) {
-                let res = response.M;				
+                let res = response.M;
                 res.map(m => {
+                    cc.SicBoLog && cc.SicBoLog.hub(m.M, m.A);
                     switch (m.M) {
                         //Thoat game
                         case cc.MethodHubOnName.PLAYER_LEAVE:
