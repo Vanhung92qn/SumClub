@@ -75,11 +75,19 @@
         };
 
         Tool.prototype.formatNumberK = function (number) {
-            if (number > 999 || number < -999) {
-                return Math.floor(number / 1000).toLocaleString('es-ES') + 'K';
-            } else {
-                return number.toLocaleString('es-ES');
+            // Auto K/M/B by magnitude. Defensive: number can be undefined/null.
+            if (number == null || isNaN(number)) return '0';
+            var abs = Math.abs(number);
+            if (abs >= 1000000000) {
+                return (Math.round(number / 100000000) / 10).toLocaleString('es-ES') + 'B';
             }
+            if (abs >= 1000000) {
+                return (Math.round(number / 100000) / 10).toLocaleString('es-ES') + 'M';
+            }
+            if (abs >= 1000) {
+                return Math.floor(number / 1000).toLocaleString('es-ES') + 'K';
+            }
+            return number.toLocaleString('es-ES');
         };
 
 		Tool.prototype.formatNumberkvn1102 = function (number) {
