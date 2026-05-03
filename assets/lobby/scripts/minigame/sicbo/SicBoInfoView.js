@@ -360,13 +360,16 @@
         updateBalancePlayer: function (data) {
             let accID = data[0];
             let balance = data[3];
+            // Defensive: server bot bcast playerBet co the khong gui balance hop le (bot dummy = balanceIn-amount)
+            if (balance == null || isNaN(balance)) {
+                return;
+            }
             if (this.positionsUI) {
                 let indexPlayer = this.positionsUI.indexOf(accID);
                 if (indexPlayer != -1) {
                     this.lstPlayers[indexPlayer].updateChip(balance);
                 }
             }
-
         },
 
         //Hien thi ket qua thang
