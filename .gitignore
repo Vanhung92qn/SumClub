@@ -1,0 +1,36 @@
+# ─────────────────────────────────────────────────────────────────
+# Whitelist .gitignore — chỉ track file *.js (script Cocos).
+# Mọi thứ khác (asset, .meta, .ts, .prefab, image, font, audio...)
+# bị ignore. Khi cần track 1 file ngoại lệ thì thêm `!path/to/file`
+# ở cuối file này.
+# ─────────────────────────────────────────────────────────────────
+
+# Ignore tất cả mặc định
+*
+
+# Cho phép git duyệt vào folder con (nếu không sẽ skip toàn bộ folder)
+!*/
+
+# Cho phép file .js
+!*.js
+
+# Cho phép chính .gitignore
+!.gitignore
+
+# ─── Loại trừ build cache + IDE + thư mục lớn của Cocos ───────
+library/
+local/
+temp/
+build/
+settings/
+native/
+.vscode/
+.cursor/
+.idea/
+node_modules/
+
+# Log + file rác hệ điều hành
+*.log
+.DS_Store
+ehthumbs.db
+Thumbs.db
