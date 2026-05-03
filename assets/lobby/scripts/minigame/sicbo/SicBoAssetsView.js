@@ -147,13 +147,20 @@
                     break;
             }
 
-            try {
-                nodeChip.setScale(0.7, 0.7);
-            } catch (e) {
-                console.log(e);
-                this.createChip(type);
+            // Defensive: neu type khong match case (hoac sfPrefabChip[idx] undefined
+            // do prefab chua link du chip), nodeChip se null. KHONG goi de quy lai
+            // vi gay stack overflow (recursion vo han voi cung type).
+            if (!nodeChip) {
+                if (cc.SicBoLog) {
+                    cc.SicBoLog.warn('AssetsView',
+                        'createChip(' + type + ') -> null. Kiem tra cc.SicBoMapChip + sfPrefabChip[' + type + '] da link prefab chua.');
+                } else {
+                    console.warn('[Sicbo][AssetsView] createChip(' + type + ') -> null prefab not linked');
+                }
+                return null;
             }
 
+            nodeChip.setScale(0.7, 0.7);
             return nodeChip;
         },
 

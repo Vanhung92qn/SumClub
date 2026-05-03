@@ -228,6 +228,10 @@
             let posIndex = this.getListChip(betSide).length;
             //Khoi tao chip
             let chip = this.controller.createChip(cc.SicBoMapChipSpriteFrame[betValue]);
+            if (!chip) {
+                cc.SicBoLog && cc.SicBoLog.warn('ChipsView', 'moveChipBet skip - chip null betValue=' + betValue);
+                return;
+            }
             chip.parent = this.getPostBet(betSide).parent;
             chip.position = posChipStart;
             let moveAction = cc.moveTo(0.3, posChipEnd);
@@ -286,6 +290,10 @@
                     let betSide = parseInt(sideData.BetSide);
                     let betValue = parseInt(sideData.BetValue);
                     let chip = this.controller.createChip(cc.SicBoMapChipSpriteFrame[betValue]);
+                    if (!chip) {
+                        cc.SicBoLog && cc.SicBoLog.warn('ChipsView', 'updateChipForBetSession skip - chip null betValue=' + betValue);
+                        return;
+                    }
                     let positionChip = this.randomPosChip(betValue, betSide);
 
                     chip.parent = this.getPostBet(sideData.BetSide).parent;
@@ -328,6 +336,10 @@
                     totalTime = index * 0.1;
                     //Tao chip
                     let chipRefund = this.controller.createChip(cc.SicBoMapChipSpriteFrame[chip[1]]);
+                    if (!chipRefund) {
+                        cc.SicBoLog && cc.SicBoLog.warn('ChipsView', 'refundChips skip - chip null betValue=' + chip[1]);
+                        return;
+                    }
                     chipRefund.parent = this.getPostBet(sideWin).parent;
                     chipRefund.position = this.posDealer.position;
                     let posEnd = this.randomPosChip(chip[1], sideWin);
