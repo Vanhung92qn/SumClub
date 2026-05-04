@@ -405,7 +405,7 @@ var netConfig = require('NetConfig');
         tryClicked: function () {
             if (cc.sys.isNative) {
                 cc.PopupController.getInstance().showBusy();
-                cc.director.loadScene('lobby');
+                cc.director.loadScene('MainGame');
             } else {
                 location.reload(); //document.location.reload()
             }
@@ -414,7 +414,7 @@ var netConfig = require('NetConfig');
         openLoginClicked: function () {
             if (cc.sys.isNative) {
                 cc.PopupController.getInstance().showBusy();
-                cc.director.loadScene('lobby');
+                cc.director.loadScene('MainGame');
             } else {
                 location.reload(); //document.location.reload()
             }

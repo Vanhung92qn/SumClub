@@ -121,19 +121,23 @@ var netConfig = require('NetConfig');
             });
         },
 
-        // Gọi sau khi lobby bundle đã sẵn sàng → preload + load MainGame scene
+        // Gọi sau khi lobby bundle đã sẵn sàng → preload + load MainGame scene qua bundle
         _onLobbyBundleReady: function () {
             var self = this;
+            var lobby = cc.assetManager.getBundle('lobby');
+            if (!lobby) {
+                console.error('[LoadingView] lobby bundle missing at _onLobbyBundleReady()');
+                return;
+            }
 
             // 10% dành cho việc load bundle, 90% còn lại cho scene preload
             self.progressBar.progress = 0.10;
             self.lbProgress.string = '10%';
             self.lbMessage.string = 'Đang tải màn hình chính...';
 
-            cc.director.preloadScene(
+            lobby.preloadScene(
                 self.sceneName,
                 function (completedCount, totalCount) {
-                    // Map 0→100% thành 10→100% trên thanh progress
                     var sceneProgress = completedCount / totalCount;
                     var totalProgress = 0.10 + (0.90 * sceneProgress);
                     var pct = Math.round(totalProgress * 100);
@@ -146,11 +150,17 @@ var netConfig = require('NetConfig');
                 function (err) {
                     if (err) {
                         console.error('[LoadingView] preloadScene error:', err);
+                        return;
                     }
+                    lobby.loadScene(self.sceneName, function (err2, scene) {
+                        if (err2) {
+                            console.error('[LoadingView] loadScene error:', err2);
+                            return;
+                        }
+                        cc.director.runScene(scene);
+                    });
                 }
             );
-
-            cc.director.loadScene(self.sceneName);
         },
 
         // ─────────────────────────────────────────────────────

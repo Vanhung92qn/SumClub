@@ -3,14 +3,14 @@ cc.Class({
     extends: cc.Component,
     properties: {
         messageLabel: cc.Label,
-        LabelVersion: cc.Label,
+        // LabelVersion: cc.Label,
         manifestUrl: {
             default: null,
             type: cc.Asset,
         },
         retryButtonNode: cc.Node,
         updateProgressBar: cc.ProgressBar,
-        star: cc.Node,
+        // star: cc.Node,
         _am: null,
         _updating: false,
         _canRetry: false,
@@ -89,12 +89,31 @@ cc.Class({
     },
 
     // ─────────────────────────────────────────────────────
-    //  BƯỚC 2: Preload + Load MainGame scene
+    //  BƯỚC 2: Preload + Load MainGame scene (qua bundle reference)
     // ─────────────────────────────────────────────────────
     loadScene: function () {
         var self = this;
+        var lobby = cc.assetManager.getBundle('lobby');
+        if (!lobby) {
+            console.error('[Splash] lobby bundle missing at loadScene()');
+            return;
+        }
+
         self.messageLabel.string = "Đang tải màn hình chính...";
-        cc.director.preloadScene("MainGame", self.onProgress.bind(self), self.onLoaded.bind(self));
+
+        lobby.preloadScene("MainGame", self.onProgress.bind(self), function (err) {
+            if (err) {
+                console.error('[Splash] preloadScene error:', err);
+                return;
+            }
+            lobby.loadScene("MainGame", function (err2, scene) {
+                if (err2) {
+                    console.error('[Splash] loadScene error:', err2);
+                    return;
+                }
+                cc.director.runScene(scene);
+            });
+        });
     },
 
     onProgress: function (completedCount, totalCount) {
@@ -103,12 +122,9 @@ cc.Class({
         this.updateProgress(phantram);
     },
 
-    onLoaded: function (err, asset) {
-        if (err) {
-            console.error('[Splash] preloadScene error:', err);
-            return;
-        }
-        cc.director.loadScene("MainGame");
+    onLoaded: function () {
+        // [DEPRECATED] thay bằng callback nội tuyến trong loadScene().
+        // Giữ stub để không break reference cũ nếu có nơi gọi.
     },
 
     onDestroy: function () {
@@ -258,6 +274,6 @@ cc.Class({
 
     updateProgress: function (progress) {
         this.updateProgressBar.progress = progress / 100;
-        if (this.star) this.star.position = cc.v2(progress, 0);
+       // if (this.star) this.star.position = cc.v2(progress, 0);
     },
 });
