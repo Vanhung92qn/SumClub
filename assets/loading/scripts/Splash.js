@@ -47,29 +47,67 @@ cc.Class({
         console.log('[BOOT]', JSON.stringify(line));
     },
 
-    // Hook cc.assetManager.downloader.downloadFile de log moi HTTP request
+    // Hook XHR + Image fetch o DOM level → bat MOI HTTP request Cocos thuc su lam
     _installNetTap: function () {
         var self = this;
-        if (!cc.assetManager || !cc.assetManager.downloader || self._netTapInstalled) return;
-        self._netTapInstalled = true;
-        var dl = cc.assetManager.downloader;
-        var origDownloadFile = dl.downloadFile;
-        if (typeof origDownloadFile !== 'function') return;
-        dl.downloadFile = function (url, options, onProgress, onComplete) {
-            var t0 = Date.now();
-            var wrapped = function (err, content) {
-                var dt = Date.now() - t0;
-                // chi log url ngan + size
-                var size = 0;
-                if (content) {
-                    if (content.byteLength) size = content.byteLength;
-                    else if (content.length) size = content.length;
-                }
-                self._bootLog('NET', { url: String(url).split('/').slice(-3).join('/'), dt: dt + 'ms', size: size, err: err ? String(err).slice(0, 80) : 0 });
-                if (onComplete) onComplete(err, content);
+        if (typeof window === 'undefined' || window.__BOOT_NET_TAP__) return;
+        window.__BOOT_NET_TAP__ = true;
+
+        try {
+            var XO = XMLHttpRequest.prototype.open;
+            var XS = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.open = function (method, url) {
+                this.__bootUrl = String(url);
+                this.__bootT0 = Date.now();
+                return XO.apply(this, arguments);
             };
-            return origDownloadFile.call(dl, url, options, onProgress, wrapped);
-        };
+            XMLHttpRequest.prototype.send = function () {
+                var xhr = this;
+                xhr.addEventListener('loadend', function () {
+                    var size = 0;
+                    try {
+                        if (xhr.response && xhr.response.byteLength) size = xhr.response.byteLength;
+                        else if (xhr.responseText) size = xhr.responseText.length;
+                        else size = parseInt(xhr.getResponseHeader('content-length') || 0, 10);
+                    } catch (e) {}
+                    self._bootLog('NET_XHR', {
+                        url: String(xhr.__bootUrl || '').split('/').slice(-3).join('/'),
+                        dt: (Date.now() - xhr.__bootT0) + 'ms',
+                        size: size,
+                        status: xhr.status
+                    });
+                });
+                return XS.apply(this, arguments);
+            };
+        } catch (e) {}
+
+        try {
+            var srcDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+            if (srcDesc && srcDesc.set) {
+                var origSet = srcDesc.set;
+                Object.defineProperty(HTMLImageElement.prototype, 'src', {
+                    configurable: true,
+                    enumerable: true,
+                    get: srcDesc.get,
+                    set: function (v) {
+                        var t0 = Date.now();
+                        this.__bootImgUrl = String(v);
+                        var img = this;
+                        this.addEventListener('load', function _onLoad() {
+                            img.removeEventListener('load', _onLoad);
+                            self._bootLog('NET_IMG', {
+                                url: String(img.__bootImgUrl).split('/').slice(-3).join('/'),
+                                dt: (Date.now() - t0) + 'ms',
+                                w: img.naturalWidth,
+                                h: img.naturalHeight
+                            });
+                        });
+                        origSet.call(this, v);
+                    }
+                });
+            }
+        } catch (e) {}
+
         self._bootLog('NET_TAP_INSTALLED');
     },
 
@@ -182,34 +220,27 @@ cc.Class({
         }
 
         self.messageLabel.string = "Đang tải màn hình chính...";
-        self._bootLog('PRELOAD_SCENE_BEGIN', { scene: 'MainGame' });
-        var preloadT0 = Date.now();
-        var lastLogged = -1;
+        // Bo preloadScene (double work). Pattern SunWin: loadScene → runScene.
+        self._bootLog('LOAD_SCENE_BEGIN', { scene: 'MainGame' });
+        var loadT0 = Date.now();
+        var lastPct = -1;
 
-        lobby.preloadScene("MainGame", function (completed, total) {
-            // log moi 10% de tranh spam
-            var pct = total ? Math.floor((completed / total) * 10) * 10 : 0;
-            if (pct !== lastLogged) {
-                lastLogged = pct;
-                self._bootLog('PRELOAD_PROGRESS', { pct: pct + '%', completed: completed, total: total });
+        lobby.loadScene("MainGame", function (completed, total) {
+            var sceneProgress = total ? completed / total : 0;
+            var pct10 = Math.floor(sceneProgress * 10) * 10;
+            if (pct10 !== lastPct) {
+                lastPct = pct10;
+                self._bootLog('SCENE_PROGRESS', { pct: pct10 + '%', completed: completed, total: total });
             }
             self.onProgress(completed, total);
-        }, function (err) {
+        }, function (err, scene) {
             if (err) {
-                self._bootLog('PRELOAD_FAIL', { err: String(err).slice(0, 120), dt: (Date.now() - preloadT0) + 'ms' });
+                self._bootLog('LOAD_SCENE_FAIL', { err: String(err).slice(0, 120), dt: (Date.now() - loadT0) + 'ms' });
                 return;
             }
-            self._bootLog('PRELOAD_DONE', { dt: (Date.now() - preloadT0) + 'ms' });
-            var loadT0 = Date.now();
-            lobby.loadScene("MainGame", function (err2, scene) {
-                if (err2) {
-                    self._bootLog('LOAD_SCENE_FAIL', { err: String(err2).slice(0, 120), dt: (Date.now() - loadT0) + 'ms' });
-                    return;
-                }
-                self._bootLog('LOAD_SCENE_DONE', { dt: (Date.now() - loadT0) + 'ms' });
-                cc.director.runScene(scene);
-                self._bootLog('RUN_SCENE_DONE', { totalSinceOnLoad: (Date.now() - self._bootT0) + 'ms' });
-            });
+            self._bootLog('LOAD_SCENE_DONE', { dt: (Date.now() - loadT0) + 'ms' });
+            cc.director.runScene(scene);
+            self._bootLog('RUN_SCENE_DONE', { totalSinceOnLoad: (Date.now() - self._bootT0) + 'ms' });
         });
     },
 

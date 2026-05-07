@@ -95,27 +95,73 @@ var netConfig = require('NetConfig');
             console.log('[BOOT]', JSON.stringify(line));
         },
 
+        // Hook XHR + Image fetch o DOM level → bat MOI HTTP request Cocos thuc su lam.
         _installNetTap: function () {
             var self = this;
-            if (!cc.assetManager || !cc.assetManager.downloader || self._netTapInstalled) return;
-            self._netTapInstalled = true;
-            var dl = cc.assetManager.downloader;
-            var orig = dl.downloadFile;
-            if (typeof orig !== 'function') return;
-            dl.downloadFile = function (url, options, onProgress, onComplete) {
-                var t0 = Date.now();
-                var wrapped = function (err, content) {
-                    var dt = Date.now() - t0;
-                    var size = 0;
-                    if (content) {
-                        if (content.byteLength) size = content.byteLength;
-                        else if (content.length) size = content.length;
-                    }
-                    self._bootLog('NET', { url: String(url).split('/').slice(-3).join('/'), dt: dt + 'ms', size: size, err: err ? String(err).slice(0, 80) : 0 });
-                    if (onComplete) onComplete(err, content);
+            if (typeof window === 'undefined' || window.__BOOT_NET_TAP__) return;
+            window.__BOOT_NET_TAP__ = true;
+
+            // Hook XMLHttpRequest
+            try {
+                var XO = XMLHttpRequest.prototype.open;
+                var XS = XMLHttpRequest.prototype.send;
+                XMLHttpRequest.prototype.open = function (method, url) {
+                    this.__bootUrl = String(url);
+                    this.__bootT0 = Date.now();
+                    return XO.apply(this, arguments);
                 };
-                return orig.call(dl, url, options, onProgress, wrapped);
-            };
+                XMLHttpRequest.prototype.send = function () {
+                    var xhr = this;
+                    xhr.addEventListener('loadend', function () {
+                        var size = 0;
+                        try {
+                            if (xhr.response && xhr.response.byteLength) size = xhr.response.byteLength;
+                            else if (xhr.responseText) size = xhr.responseText.length;
+                            else size = parseInt(xhr.getResponseHeader('content-length') || 0, 10);
+                        } catch (e) {}
+                        self._bootLog('NET_XHR', {
+                            url: String(xhr.__bootUrl || '').split('/').slice(-3).join('/'),
+                            dt: (Date.now() - xhr.__bootT0) + 'ms',
+                            size: size,
+                            status: xhr.status
+                        });
+                    });
+                    return XS.apply(this, arguments);
+                };
+            } catch (e) {}
+
+            // Hook Image.src (Cocos load texture qua <img>)
+            try {
+                var imgT0Map = new WeakMap();
+                var ImagePrototype = Image.prototype;
+                var srcDesc = Object.getOwnPropertyDescriptor(ImagePrototype, 'src') ||
+                              Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+                if (srcDesc && srcDesc.set) {
+                    var origSet = srcDesc.set;
+                    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+                        configurable: true,
+                        enumerable: true,
+                        get: srcDesc.get,
+                        set: function (v) {
+                            var t0 = Date.now();
+                            imgT0Map.set(this, t0);
+                            this.__bootImgUrl = String(v);
+                            var img = this;
+                            this.addEventListener('load', function _onLoad() {
+                                img.removeEventListener('load', _onLoad);
+                                self._bootLog('NET_IMG', {
+                                    url: String(img.__bootImgUrl).split('/').slice(-3).join('/'),
+                                    dt: (Date.now() - t0) + 'ms',
+                                    w: img.naturalWidth,
+                                    h: img.naturalHeight
+                                });
+                            });
+                            origSet.call(this, v);
+                        }
+                    });
+                }
+            } catch (e) {}
+
             self._bootLog('NET_TAP_INSTALLED');
         },
 
@@ -214,18 +260,20 @@ var netConfig = require('NetConfig');
             self.lbProgress.string = '10%';
             self.lbMessage.string = 'Đang tải màn hình chính...';
 
-            self._bootLog('PRELOAD_SCENE_BEGIN', { scene: self.sceneName });
-            var preloadT0 = Date.now();
+            // Bo preloadScene (double work voi loadScene). Pattern SunWin:
+            //  bundle.loadScene(name, progress, onLoaded) → cc.director.runScene
+            self._bootLog('LOAD_SCENE_BEGIN', { scene: self.sceneName });
+            var loadT0 = Date.now();
             var lastPct = -1;
 
-            lobby.preloadScene(
+            lobby.loadScene(
                 self.sceneName,
                 function (completedCount, totalCount) {
-                    var sceneProgress = completedCount / totalCount;
-                    var pct10 = totalCount ? Math.floor(sceneProgress * 10) * 10 : 0;
+                    var sceneProgress = totalCount ? completedCount / totalCount : 0;
+                    var pct10 = Math.floor(sceneProgress * 10) * 10;
                     if (pct10 !== lastPct) {
                         lastPct = pct10;
-                        self._bootLog('PRELOAD_PROGRESS', { pct: pct10 + '%', completed: completedCount, total: totalCount });
+                        self._bootLog('SCENE_PROGRESS', { pct: pct10 + '%', completed: completedCount, total: totalCount });
                     }
                     var totalProgress = 0.10 + (0.90 * sceneProgress);
                     var pctVisible = Math.round(totalProgress * 100);
@@ -234,22 +282,14 @@ var netConfig = require('NetConfig');
                         self.lbProgress.string = pctVisible + '%';
                     }
                 },
-                function (err) {
+                function (err, scene) {
                     if (err) {
-                        self._bootLog('PRELOAD_FAIL', { err: String(err).slice(0, 120), dt: (Date.now() - preloadT0) + 'ms' });
+                        self._bootLog('LOAD_SCENE_FAIL', { err: String(err).slice(0, 120), dt: (Date.now() - loadT0) + 'ms' });
                         return;
                     }
-                    self._bootLog('PRELOAD_DONE', { dt: (Date.now() - preloadT0) + 'ms' });
-                    var loadT0 = Date.now();
-                    lobby.loadScene(self.sceneName, function (err2, scene) {
-                        if (err2) {
-                            self._bootLog('LOAD_SCENE_FAIL', { err: String(err2).slice(0, 120), dt: (Date.now() - loadT0) + 'ms' });
-                            return;
-                        }
-                        self._bootLog('LOAD_SCENE_DONE', { dt: (Date.now() - loadT0) + 'ms' });
-                        cc.director.runScene(scene);
-                        self._bootLog('RUN_SCENE_DONE', { totalSinceOnLoad: (Date.now() - self._bootT0) + 'ms' });
-                    });
+                    self._bootLog('LOAD_SCENE_DONE', { dt: (Date.now() - loadT0) + 'ms' });
+                    cc.director.runScene(scene);
+                    self._bootLog('RUN_SCENE_DONE', { totalSinceOnLoad: (Date.now() - self._bootT0) + 'ms' });
                 }
             );
         },
