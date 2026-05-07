@@ -6,148 +6,128 @@
     cc.ShopTopupView = cc.Class({
         "extends": cc.Component,
         properties: {
-            nodeCard: cc.Node,
-            nodeBank: cc.Node,
-            nodeMoMo: cc.Node,
-            nodeSMS: cc.Node,
-            nodeLoan: cc.Node,
-            nodeUSDT: cc.Node,
-            nodeTabCard: cc.Node,
-            nodeTabLoanNoBank: cc.Node, //tab Loan khi ko co NH
-            nodeTabLoanHaveBank: cc.Node, //tab Loan co Bank
-            nodeTabBank: cc.Node,
+            nodeChonNapTien: cc.Node, // menu chon loai nap
 
-            nodeTransfer: cc.Node,
-            nodeRedeemReward: cc.Node,
+            nodeCodePay: cc.Node,     // Nap ngan hang (CODEPAY)
+            nodeMoMo: cc.Node,        // Nap vi dien tu (momoView)
+            nodeCard: cc.Node,        // Nap the dien thoai (topupView)
+            nodeGiftcode: cc.Node,    // Nap giftcode
+            nodeUSDT: cc.Node,        // Nap tien ao (TienAOUSDT)
 
             nodeBusy: cc.Node,
-
             lbCardBonus: cc.Label,
-            nodeViettelPay: cc.Node,
-            nodeCodePay: cc.Node,
             audioClick: cc.AudioSource,
         },
 
-        // use this for initialization
         onLoad: function () {
             cc.ShopController.getInstance().setShopTopupView(this);
-            this.nodeTabActive = this.nodeCard;
-            this.currentTab = cc.ShopTab.TOPUP;
             this.node.zIndex = cc.NoteDepth.POPUP_PORTAL;
             this.animation = this.node.getComponent(cc.Animation);
 
-            this.nodeTabCard.active = true;
-            this.nodeTabLoanNoBank.active = false;
-            this.nodeTabLoanHaveBank.active = false;
-            this.nodeTabBank.active = true;
-            this.nodeTransfer.active = false;
-            this.nodeRedeemReward.active = false;
-            this.nodeViettelPay.active = false;
             this.nodeCodePay.active = false;
+            this.nodeMoMo.active = false;
+            this.nodeCard.active = false;
+            this.nodeGiftcode.active = false;
             this.nodeUSDT.active = false;
+            this.nodeChonNapTien.active = true;
 
-            // if (cc.Config.getInstance().getServiceId() === cc.ServiceId.BLOCK_BUSTER_2
-            //     || cc.Config.getInstance().getServiceId() === cc.ServiceId.BLOCK_BUSTER_3) {
-            //     this.nodeTabBank.active = true;
-            //     this.nodeTabLoanNoBank.active = false;
-            //     this.nodeTabLoanHaveBank.active = true;
-            // } else {
-            //     this.nodeTabBank.active = false;
-            //     this.nodeTabLoanNoBank.active = true;
-            //     this.nodeTabLoanHaveBank.active = false;
-            // }
+            this.nodeTabActive = this.nodeChonNapTien;
+            this.currentTab = 'MENU';
         },
 
-        // onEnable: function () {
-        //     this.animation.play('openPopup');
-        //     var startTab = cc.Tool.getInstance().getItem('@startShopTab');
-        //     var self = this;
-        //     cc.director.getScheduler().schedule(function () {
-        //         self.activeTopupTab(startTab);
-        //     }, this, 0, 0, 0.3, false);
-
-        //     this.getTotalCardBonus();
-        // },
         onEnable: function () {
             this.animation.play('openPopup');
-            
-            // Đặt tab khởi tạo là CODEPAY
-            var startTab = cc.ShopTab.CODEPAY; 
-        
-            var self = this;
-            cc.director.getScheduler().schedule(function () {
-                self.activeTopupTab(startTab);
-            }, this, 0, 0, 0.3, false);
-        
-            this.getTotalCardBonus();
+            this.showChonNapTien();
         },
 
-        changeTabClicked: function (event, data) {
-            if (data.toString() === this.currentTab) return;
-            this.activeTopupTab(data.toString());
-            this.audioClick.loop = false;
-            this.audioClick.play();
-            cc.DDNA.getInstance().uiInteraction(cc.DDNAUILocation.SHOP, data.toString(), cc.DDNAUIType.BUTTON);
+        // Hien menu chon loai nap, an cac tab con
+        showChonNapTien: function () {
+            if (this.nodeTabActive) this.nodeTabActive.active = false;
+            this.nodeChonNapTien.active = true;
+            this.nodeTabActive = this.nodeChonNapTien;
+            this.currentTab = 'MENU';
         },
 
-        activeTopupTab(tabName, nickName) {
-            if (nickName === undefined) {
-                cc.Tool.getInstance().setItem('@nickNameAgency', '');
-            } else {
-                cc.Tool.getInstance().setItem('@nickNameAgency', nickName);
-            }
-
+        activeTopupTab: function (tabName) {
             this.nodeTabActive.active = false;
             switch (tabName) {
-                case cc.ShopTab.TOPUP:
-                    this.nodeTabActive = this.nodeCard;
-                    break;
-                case cc.ShopTab.BANK:
-                    this.nodeTabActive = this.nodeBank;
-                    break;
-                case cc.ShopTab.LOAN:
-                    this.nodeTabActive = this.nodeLoan;
-                    break;
-                case cc.ShopTab.MOMO:
-                    this.nodeTabActive = this.nodeMoMo;
-                    break;
-                case cc.ShopTab.SMS:
-                    this.nodeTabActive = this.nodeSMS;
-                    break;
-                case cc.ShopTab.TRANSFER:
-                    this.nodeTabActive = this.nodeTransfer;
-                    break;
-                case cc.ShopTab.REDEEM_REWARD:
-                    this.nodeTabActive = this.nodeRedeemReward;
-                    break;
-                case cc.ShopTab.VIETTEL_PAY:
-                    this.nodeTabActive = this.nodeViettelPay;
-                    break;
-                case cc.ShopTab.CODEPAY:
+                case 'CODEPAY':
                     this.nodeTabActive = this.nodeCodePay;
                     break;
-                case cc.ShopTab.USDT:
+                case 'MOMO':
+                    this.nodeTabActive = this.nodeMoMo;
+                    break;
+                case 'TOPUP':
+                    this.nodeTabActive = this.nodeCard;
+                    break;
+                case 'GIFTCODE':
+                    this.nodeTabActive = this.nodeGiftcode;
+                    break;
+                case 'USDT':
                     this.nodeTabActive = this.nodeUSDT;
                     break;
             }
             this.nodeTabActive.active = true;
-
             this.currentTab = tabName;
+            this.audioClick.loop = false;
+            this.audioClick.play();
+        },
+
+        // Click cac icon tren menu chon nap tien
+        napNganHangClicked: function () {
+            this.activeTopupTab('CODEPAY');
+        },
+
+        napViDienTuClicked: function () {
+            this.activeTopupTab('MOMO');
+        },
+
+        napTheDienThoaiClicked: function () {
+            this.activeTopupTab('TOPUP');
+        },
+
+        napGiftcodeClicked: function () {
+            this.activeTopupTab('GIFTCODE');
+        },
+
+        napTienAoClicked: function () {
+            this.activeTopupTab('USDT');
+        },
+
+        // Nut Back tu tab con quay ve menu
+        backToMenuClicked: function () {
+            this.showChonNapTien();
+            this.audioClick.loop = false;
+            this.audioClick.play();
         },
 
         getTotalCardBonus: function () {
             var getTotalCardBonusCommand = new cc.GetTotalCardBonusCommand;
             getTotalCardBonusCommand.execute(this);
         },
-		 clicklichsugiaodich: function () {
+
+        onGetTotalCardBonusResponse: function (obj) {
+            if (this.lbCardBonus) {
+                this.lbCardBonus.string = obj.TotalCard;
+                if (this.totalCard !== undefined) {
+                    if (this.totalCard === 1 && obj.TotalCard === 0) {
+                        cc.TopupController.getInstance().refreshListCard();
+                    }
+                }
+                this.totalCard = obj.TotalCard;
+            }
+        },
+
+        clicklichsugiaodich: function () {
             if (cc.LoginController.getInstance().checkLogin()) {
                 cc.LobbyController.getInstance().createHistoryView(cc.HistoryTab.BANK);
                 cc.DDNA.getInstance().uiInteraction(cc.DDNAUILocation.PORTAL, 'SETTING_HISTORY', cc.DDNAUIType.BUTTON);
                 this.audioClick.loop = false;
-                this.audioClick.play(); 
+                this.audioClick.play();
             }
         },
-		 clicklichsunapthe: function () {
+
+        clicklichsunapthe: function () {
             if (cc.LoginController.getInstance().checkLogin()) {
                 cc.LobbyController.getInstance().createHistoryView(cc.HistoryTab.TOPUP);
                 cc.DDNA.getInstance().uiInteraction(cc.DDNAUILocation.PORTAL, 'SETTING_HISTORY', cc.DDNAUIType.BUTTON);
@@ -156,46 +136,23 @@
             }
         },
 
-        onGetTotalCardBonusResponse: function (obj) {
-            if (this.lbCardBonus) {
-                this.lbCardBonus.string = obj.TotalCard;
-                if (this.totalCard !== undefined) {
-                    //refresh lai list card khi so the cao khuyen mai tư 1 -> 0
-                    if (this.totalCard === 1 && obj.TotalCard === 0) {
-                        cc.TopupController.getInstance().refreshListCard();
-                    }
-                    this.totalCard = obj.TotalCard;
-                } else {
-                    //lan dau tien chua co -> set du lieu
-                    this.totalCard = obj.TotalCard;
-                }
-            }
-        },
-		 tienaoclick: function () {
-                cc.PopupController.getInstance().showMessage('Tính năng sẽ sớm ra mắt');
-        },
-
         showShopBusy: function () {
             this.nodeBusy.active = true;
         },
 
         hideShopBusy: function () {
-            if (this.nodeBusy)
-                this.nodeBusy.active = false;
+            if (this.nodeBusy) this.nodeBusy.active = false;
         },
 
         closeClicked: function () {
-            //this.showRegister(false);
             this.animation.play('closePopup');
             var self = this;
-            var delay = 0.12;
             cc.director.getScheduler().schedule(function () {
                 self.animation.stop();
                 cc.LobbyController.getInstance().destroyShopTopupView();
-                this.audioClick.loop = false;
-                this.audioClick.play();
-            }, this, 1, 0, delay, false);
+                self.audioClick.loop = false;
+                self.audioClick.play();
+            }, this, 1, 0, 0.12, false);
         }
-
     });
 }).call(this);

@@ -18,13 +18,21 @@ var taiXiuConfig = require("TaiXiuConfig");
 
       //animation Dice
       nodeBGTimer: cc.Node,
-      //animationDice: cc.Animation,
-      xnAnimation: {
+      //3 cc.Sprite hien thi mat xuc xac ket qua (keo Sprite component cua tung dice vao theo thu tu 1,2,3)
+      spDice: {
         default: [],
-        type: sp.Skeleton,
+        type: cc.Sprite,
+      },
+      //6 SpriteFrame tuong ung mat 1..6 (keo 1.png..6.png tu dice.plist theo dung thu tu)
+      sfDices: {
+        default: [],
+        type: cc.SpriteFrame,
       },
       xnAnimationplay: cc.Node,
+      //Spine effect tung xuc xac
       xnEffect: sp.Skeleton,
+      //ten clip Spine cua animation tung
+      diceShakeAnimName: 'animation',
       //sprite 3 dice
 
       //label tong diem cua 3 dice
@@ -65,19 +73,26 @@ var taiXiuConfig = require("TaiXiuConfig");
     },
 
     resetUI: function () {
-      //dang play anim dice?
       this.animationOpenPlaying = false;
-      // this.animationDice.stop();
-      // this.animationDice.node.active = false;
       this.nodeResult.active = false;
       this.nodeResultDice.active = false;
       this.nodeBowl.active = false;
       this.Jackpot.active = false;
       this.nodeBGTimer.active = false;
-      // this.nodeDiceAnim.active = false;
       this.xnAnimationplay.active = false;
       this.nodeBgTotalDice.active = false;
       this.lbTotalDice.node.active = false;
+
+      //an 3 sprite dice
+      if (this.spDice && this.spDice.length) {
+        this.spDice.forEach(function (sp) {
+          if (sp && sp.node) sp.node.active = false;
+        });
+      }
+      //tat Spine tung
+      if (this.xnEffect && this.xnEffect.node) {
+        this.xnEffect.node.active = false;
+      }
 
       //reset lai vi tri bowl
       this.nodeBowl.position = this.rootPasBowl;
@@ -95,6 +110,20 @@ var taiXiuConfig = require("TaiXiuConfig");
 
     getIsBowl: function () {
       return this.nodeBowl.active;
+    },
+
+    //gan mat 1..6 cho 3 sprite dice
+    applyDiceFaces: function (result) {
+      var dice = [result.Dice1, result.Dice2, result.Dice3];
+      for (var i = 0; i < this.spDice.length; i++) {
+        var v = dice[i];
+        var sp = this.spDice[i];
+        if (!sp || !sp.node) continue;
+        if (v >= 1 && v <= 6 && this.sfDices[v - 1]) {
+          sp.spriteFrame = this.sfDices[v - 1];
+          sp.node.active = true;
+        }
+      }
     },
 
     updateResult: function (sessionInfo) {
@@ -132,21 +161,16 @@ var taiXiuConfig = require("TaiXiuConfig");
     },
 
     playAnimationAndSetResult: function (sessionInfo) {
-      //tinh total Dice
       this.totalDice =
         sessionInfo.Result.Dice1 +
         sessionInfo.Result.Dice2 +
         sessionInfo.Result.Dice3;
 
-      //bat node Result
       this.nodeResult.active = true;
-
       this.xnAnimationplay.active = true;
-
-      //set thong so diem cua Dice
       this.lbTotalDice.string = this.totalDice;
 
-      //set ket qua vao sprite Dice
+      //che do Nan: ung dia che 3 dice sau khi tung xong
       if (cc.TaiXiuController.getInstance().getIsNan()) {
         setTimeout(
           function () {
@@ -155,138 +179,61 @@ var taiXiuConfig = require("TaiXiuConfig");
           2100
         );
       }
-      this.xnAnimation[0].setAnimation(
-        0,
-        `xi ngau bay ${sessionInfo.Result.Dice1}`,
-        false
-      );
-      this.xnAnimation[1].setAnimation(
-        0,
-        `xi ngau bay ${sessionInfo.Result.Dice2}`,
-        false
-      );
-      this.xnAnimation[2].setAnimation(
-        0,
-        `xi ngau bay ${sessionInfo.Result.Dice3}`,
-        false
-      );
-      this.rollDice.play();
-      //this.amthanhxucxac.play();
-      this.xnEffect.node.active = true;
-      this.xnEffect.setAnimation(0, "effect", false);
 
-      this.xnAnimation[0].setCompleteListener(
-        function () {
-          this.nodeBGTimer.active = true;
-          this.diceAnimFinish();
-        }.bind(this)
-      );
-
-      //Tat node Dice Ket qua (3 Dice)
+      //an 3 sprite dice + node ket qua trong khi tung
+      this.spDice.forEach(function (sp) {
+        if (sp && sp.node) sp.node.active = false;
+      });
       this.nodeResultDice.active = false;
 
-      //anim mới
-      // this.nodeDiceAnim.active = true;
-      // this.animXocBat.__preload();
+      if (this.rollDice) this.rollDice.play();
 
-      //Bat node Dice Anim
-      // this.animationDice.node.active = true;
-      // this.animationDice.play('diceAnimNew'); //diceAnimationOld
+      var self = this;
+      if (this.xnEffect && this.xnEffect.node) {
+        //phat Spine tung
+        this.xnEffect.node.active = true;
+        this.xnEffect.setAnimation(0, this.diceShakeAnimName, false);
+        this.xnEffect.setCompleteListener(function () {
+          self.applyDiceFaces(sessionInfo.Result);
+          self.xnEffect.node.active = false;
+          self.nodeBGTimer.active = true;
+          self.diceAnimFinish();
+        });
+      } else {
+        cc.warn('[TaiXiuResultView] xnEffect chua wire, skip animation tung');
+        self.applyDiceFaces(sessionInfo.Result);
+        self.nodeBGTimer.active = true;
+        self.diceAnimFinish();
+      }
 
-      //danh dau la dang play
       this.animationOpenPlaying = true;
     },
 
     //chi bat ket qua xuc xac (che do Nan)
     setResultDice: function (sessionInfo) {
-      //bat node Result
-
       this.nodeResult.active = true;
-
-      //set ket qua vao sprite Dice
-      this.xnAnimation[0].setAnimation(
-        0,
-        `xi ngau bay ${sessionInfo.Result.Dice1}`,
-        false
-      );
-      this.xnAnimation[1].setAnimation(
-        0,
-        `xi ngau bay ${sessionInfo.Result.Dice2}`,
-        false
-      );
-      this.xnAnimation[2].setAnimation(
-        0,
-        `xi ngau bay ${sessionInfo.Result.Dice3}`,
-        false
-      );
-
-      //this.amthanhxucxac.play();
-      this.xnEffect.node.active = true;
-      this.xnEffect.setAnimation(0, "effect", false);
+      this.applyDiceFaces(sessionInfo.Result);
+      this.nodeBGTimer.active = true;
       this.diceAnimFinish();
-      this.xnAnimation[0].setCompleteListener(
-        function () {
-          this.nodeBGTimer.active = true;
-        }.bind(this),
-        100
-      );
-
-      //Bat node Dice Ket qua (3 Dice)
       this.nodeResultDice.active = true;
     },
 
-    //goi set ket qua luon (ko chay animation dice)
+    //goi set ket qua luon (ko chay animation dice — vao giua phien)
     setResult: function (sessionInfo) {
-      //neu dang play animation dice thi return luon. Ket qua se tu hien sau khi anim ket thuc
       if (this.animationOpenPlaying) return;
 
-      //hien luon ket qua
       this.totalDice =
         sessionInfo.Result.Dice1 +
         sessionInfo.Result.Dice2 +
         sessionInfo.Result.Dice3;
 
-      //bat node Result
       this.nodeResult.active = true;
-
-      //set thong so diem cua Dice
       this.lbTotalDice.string = this.totalDice;
 
-      //set ket qua vao sprite Dice
-      this.xnAnimation[0].setAnimation(
-        0,
-        `xi ngau bay ${sessionInfo.Result.Dice1}`,
-        false
-      );
-      this.xnAnimation[1].setAnimation(
-        0,
-        `xi ngau bay ${sessionInfo.Result.Dice2}`,
-        false
-      );
-      this.xnAnimation[2].setAnimation(
-        0,
-        `xi ngau bay ${sessionInfo.Result.Dice3}`,
-        false
-      );
-
-      //this.amthanhxucxac.play();
-      this.xnEffect.node.active = true;
-      this.xnEffect.setAnimation(0, "effect", false);
+      this.applyDiceFaces(sessionInfo.Result);
+      this.nodeBGTimer.active = true;
       this.diceAnimFinish();
-      this.xnAnimation[0].setCompleteListener(
-        function () {
-          this.nodeBGTimer.active = true;
-        }.bind(this),
-        100
-      );
-      // this.spriteDice1.spriteFrame = this.sfDice1s[sessionInfo.Result.Dice1 - 1];
-      //this.spriteDice2.spriteFrame = this.sfDice2s[sessionInfo.Result.Dice2 - 1];
-      //this.spriteDice3.spriteFrame = this.sfDice3s[sessionInfo.Result.Dice3 - 1];
-
-      //Bat node Dice Ket qua (3 Dice)
       this.nodeResultDice.active = true;
-
-      //effect
       this.startEffectResult();
     },
 

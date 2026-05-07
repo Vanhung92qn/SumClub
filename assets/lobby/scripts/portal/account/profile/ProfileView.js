@@ -94,7 +94,7 @@ var netConfig = require('NetConfig');
         },
 		
 		clickopenketsat: function () {
-            cc.AccountController.getInstance().activeTab(cc.AccountTab.KET_SATK);
+            cc.AccountController.getInstance().activeTab(cc.AccountTab.KET_SAT);
         },
 		 clicklichsugiaodich: function () {
             if (cc.LoginController.getInstance().checkLogin()) {

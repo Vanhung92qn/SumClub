@@ -55,5 +55,14 @@
         policyClicked: function () {
             this.nodePolicy.active = true;
         },
+
+        // Goi khi click nut close trong vipView (mo qua tab AccountView)
+        closeClicked: function () {
+            cc.LobbyController.getInstance().destroyAccountView();
+        },
+
+        backClicked: function () {
+            cc.LobbyController.getInstance().destroyAccountView();
+        },
     });
 }).call(this);

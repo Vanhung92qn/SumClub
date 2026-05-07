@@ -34,13 +34,9 @@ var helper = require('Helper');
 			nodebaton: cc.Node,
 			rollDice: cc.AudioSource,
 			winSound: cc.AudioSource,
-			xnAnimation:{
-			default: [],
-			type:    sp.Skeleton,
-		    },   
+			//am thanh phien moi
+			newSessionSound: cc.AudioSource,
 			Showketqua: cc.Node,
-		    xnEffect:sp.Skeleton,
-			
         },
 
         onLoad: function () {
@@ -74,24 +70,25 @@ var helper = require('Helper');
                 //giai doan dat cuoc
                 case cc.TaiXiuMd5State.BETTING: //54
                     if (this.currentState !== md5sessionInfo.CurrentState) {
-                        //goi reset thong tin betInfo
+                        //phien moi: reset bet info
                         cc.TaiXiuMd5Controller.getInstance().resetBetAndResultInfo();
-                    }if (md5sessionInfo.Ellapsed === 50){
-						this.playAnimationvn();
-					}if (md5sessionInfo.Ellapsed <= 48){
-						this.nodekeymd5.active = true;
-						this.nodebaton.active = true;
+                        this.nodekeymd5.active = true;
+                        this.nodebaton.active = true;
+                        this.Showketqua.active = false;
+                        //chi thong bao "Phien moi" khi thuc su vua bat dau (Ellapsed gan 50)
+                        //tranh hien khi reload game o giua phien
+                        if (md5sessionInfo.Ellapsed >= 48) {
+                            if (this.animationMess) this.animationMess.play('openMessage');
+                            if (this.lblTextNotiNewGame) this.lblTextNotiNewGame.string = 'Phiên mới.';
+                            if (this.newSessionSound) this.newSessionSound.play();
+                        }
+                    }
                     this.lbBigTimer.node.active = true;
-					}if (md5sessionInfo.Ellapsed <= 46){
-						this.Showketqua.active = false;
-					}
-					
-					
                     this.lbTimer.node.active = false;
                     this.nodeBGTimer.active = false;
-					helper.numberToEfect(this.lbTotalBetTai, md5sessionInfo.TotalBetTai);
-			        helper.numberToEfect(this.lbTotalBetXiu, md5sessionInfo.TotalBetXiu);
-					break;
+                    helper.numberToEfect(this.lbTotalBetTai, md5sessionInfo.TotalBetTai);
+                    helper.numberToEfect(this.lbTotalBetXiu, md5sessionInfo.TotalBetXiu);
+                    break;
                 //giai doan cho ket qua (ko cho dat cuoc)
                 case cc.TaiXiuMd5State.END_BETTING:
                     this.lbBigTimer.node.active = true;
@@ -132,19 +129,6 @@ var helper = require('Helper');
             this.lbUserBetTai.string = cc.Tool.getInstance().formatNumber(md5sessionInfo.TotalTai);
             this.lbUserBetXiu.string = cc.Tool.getInstance().formatNumber(md5sessionInfo.TotalXiu);
         },
-		playAnimationvn: function () {
-			this.Showketqua.active = true;
-			        this.xnAnimation[0].setAnimation(0, `xi ngau bay ${1}`, false);
-					this.xnAnimation[1].setAnimation(0, `xi ngau bay ${1}`, false);
-					this.xnAnimation[2].setAnimation(0, `xi ngau bay ${1}`, false);
-					this.rollDice.play();
-					this.xnEffect.node.active = true;
-					this.xnEffect.setAnimation(0,'effect',false)
-					this.xnAnimation[0].setCompleteListener(function(){
-		            this.nodebaton.active = true;
-					this.nodekeymd5.active = true;
-					}.bind(this),70)
-		},
 		modiaplay: function () {
 			if (this.nodeBowl.x >= 172) {
 					   

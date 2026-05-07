@@ -95,7 +95,7 @@ var netConfig = require('NetConfig');
             var delay = 0.12;
             cc.director.getScheduler().schedule(function () {
                 self.animation.stop();
-                self.node.active = false;
+                cc.LobbyController.getInstance().destroyAccountView();
             }, this, 1, 0, delay, false);
         },
 

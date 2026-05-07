@@ -251,21 +251,18 @@ var timeAll=60;
                         break;
                     case cc.MethodHubOnName.WIN_RESULT_MD5:
                         var data = m.A[0];
-                        var waitTime = taiXiuMd5Config.TIME_WAIT_DICE_ANIMATION;
-                        //dang bat che do Nan
                         if (cc.TaiXiuMd5Controller.getInstance().getIsNan()) {
-                            //thoi gian doi show ket qua win lau hon
-                            waitTime = taiXiuMd5Config.TIME_WAIT_SHOW_WIN_RESULT_NAN;
+                            //che do Nan: cho user ran xong moi play effect win
+                            cc.TaiXiuMd5Controller.getInstance().setPendingWin(data.Award, data.Balance);
+                        } else {
+                            //binh thuong: doi animation tung xong roi play
+                            var waitTime = taiXiuMd5Config.TIME_WAIT_DICE_ANIMATION;
+                            cc.director.getScheduler().schedule(function () {
+                                cc.TaiXiuMd5Controller.getInstance().playEffectWin(data.Award);
+                                cc.BalanceController.getInstance().updateRealBalance(data.Balance);
+                                cc.BalanceController.getInstance().updateBalance(data.Balance);
+                            }, this, 0, 0, waitTime, false);
                         }
-
-                        cc.director.getScheduler().schedule(function () {
-                            //play fx win
-                            cc.TaiXiuMd5Controller.getInstance().playEffectWin(data.Award);
-                            //update lai balance
-                            cc.BalanceController.getInstance().updateRealBalance(data.Balance);
-                            cc.BalanceController.getInstance().updateBalance(data.Balance);
-                        }, this, 0, 0, waitTime, false);
-
                         break;
                     case cc.MethodHubOnName.MESSAGE:
                         var data = m.A[0];

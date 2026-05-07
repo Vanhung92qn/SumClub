@@ -243,7 +243,7 @@
         };
 
         LobbyController.prototype.createEventViewTopVP = function () {
-            return this.lobbyView.createEventViewTopVP();
+            return this.lobbyView.createEventView();
         };
 
         LobbyController.prototype.createAppSafeHelpView = function () {

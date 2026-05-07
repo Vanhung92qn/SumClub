@@ -53,6 +53,7 @@
             //console.log(event);
             this.avatarID = parseInt(data.toString());
             this.nodeSelect.position = this.nodeAvatars[this.avatarID].position;
+            this.updateAvatarClicked();
         },
 
         updateAvatarClicked: function () {

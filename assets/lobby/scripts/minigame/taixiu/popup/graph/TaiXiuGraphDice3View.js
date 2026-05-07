@@ -39,123 +39,99 @@
 
             this.spacePoint = (this.spaceY * this.maxItemPerCol) / (this.maxSum - this.minSum);
 
-            this.drawing1 = this.nodeGraphics1.getComponent(cc.Graphics);
-            this.drawing1.lineWidth = lineWidth;
-            this.drawing1.strokeColor = this.colorDice1;
-            this.drawing1.fillColor = this.colorDice1;
+            this.drawing1 = this._initDrawing(this.nodeGraphics1, this.colorDice1, lineWidth);
+        },
 
-            this.drawing2 = this.nodeGraphics2.getComponent(cc.Graphics);
-            this.drawing2.lineWidth = lineWidth;
-            this.drawing2.strokeColor = this.colorDice2;
-            this.drawing2.fillColor = this.colorDice2;
-
-            this.drawing3 = this.nodeGraphics3.getComponent(cc.Graphics);
-            this.drawing3.lineWidth = lineWidth;
-            this.drawing3.strokeColor = this.colorDice3;
-            this.drawing3.fillColor = this.colorDice3;
+        _initDrawing: function (node, color, lineWidth) {
+            if (!node) return null;
+            var g = node.getComponent(cc.Graphics);
+            if (!g) return null;
+            g.lineWidth = lineWidth;
+            g.strokeColor = color;
+            g.fillColor = color;
+            return g;
         },
 
         draw: function (list) {
             this.cacheList = list;
+            if (!this.drawing1 || !list) return;
 
-            this.drawDice1(list);
-            this.drawDice2(list);
-            this.drawDice3(list);
-        },
+            //clear toan bo line + dots
+            this.drawing1.clear();
+            if (this.nodeGraphics1) this.nodeGraphics1.removeAllChildren();
 
-        drawDice1: function (list) {
-            var self = this;
-            self.drawPoints = [];
-            var index = 0;
-
-            list.forEach(function (item) {
-                self.createNode(self.drawing1, item.FirstDice, index);
-                index++;
-            });	
-            this.strokeLine(self.drawing1);
-        },
-
-        drawDice2: function (list) {
-            var self = this;
-            self.drawPoints = [];
-            var index = 0;
-
-            list.forEach(function (item) {
-                self.createNode(self.drawing2, item.SecondDice, index);
-                index++;
-            });
-
-            self.strokeLine(self.drawing2);
-        },
-
-        drawDice3: function (list) {
-            var self = this;
-            self.drawPoints = [];
-            var index = 0;
-
-            list.forEach(function (item) {
-                self.createNode(self.drawing3, item.ThirdDice, index);
-                index++;
-            });
-
-            self.strokeLine(self.drawing3);
-        },
-
-        createNode: function (drawing, dice, colIndex) {
-            //toa do X
-            var posX = this.rootPosX - (colIndex * this.spaceX);
-            //toa do Y
-            var posY = this.rootPosY + (dice - this.minSum) * this.spacePoint;
-
-            //di chuyen den doan goc
-            if (colIndex === 0) {
-                drawing.moveTo(posX, posY);
+            //ve 3 line tren CUNG 1 cc.Graphics, doi color giua moi line
+            if (this._toggleOn(this.toggleDice1)) {
+                this._drawLine(list, 'FirstDice', this.colorDice1, this._sf(0));
             }
-
-            this.drawPoints.push(cc.v2(posX, posY));
+            if (this._toggleOn(this.toggleDice2)) {
+                this._drawLine(list, 'SecondDice', this.colorDice2, this._sf(1));
+            }
+            if (this._toggleOn(this.toggleDice3)) {
+                this._drawLine(list, 'ThirdDice', this.colorDice3, this._sf(2));
+            }
         },
 
-        strokeLine: function (drawing) {
+        _toggleOn: function (toggle) {
+            return !toggle || toggle.isChecked;
+        },
+
+        _drawLine: function (list, key, color, spriteFrame) {
+            var d = this.drawing1;
+            if (!d) return;
+            d.strokeColor = color;
+            d.fillColor = color;
+
             var self = this;
-            var index = 0;
-            this.drawPoints.forEach(function (point) {
-                drawing.lineTo(point.x, point.y);
-                drawing.stroke();
-                drawing.moveTo(point.x, point.y);
-                drawing.circle(point.x, point.y, self.circleRadian);
-                drawing.fill();
-                index++;
+            list.forEach(function (item, idx) {
+                var dice = item[key];
+                var posX = self.rootPosX - (idx * self.spaceX);
+                var posY = self.rootPosY + (dice - self.minSum) * self.spacePoint;
+
+                if (idx === 0) {
+                    d.moveTo(posX, posY);
+                } else {
+                    d.lineTo(posX, posY);
+                    d.stroke();
+                    d.moveTo(posX, posY);
+                }
+
+                if (spriteFrame && self.nodeGraphics1) {
+                    self._spawnDot(self.nodeGraphics1, spriteFrame, cc.v2(posX, posY));
+                } else {
+                    d.circle(posX, posY, self.circleRadian);
+                    d.fill();
+                }
             });
+        },
+
+        _sf: function (idx) {
+            return (this.spriteDice && this.spriteDice[idx]) ? this.spriteDice[idx] : null;
+        },
+
+        _spawnDot: function (parent, spriteFrame, pos) {
+            var node = new cc.Node();
+            var sp = node.addComponent(cc.Sprite);
+            sp.spriteFrame = spriteFrame;
+            node.setPosition(pos);
+            parent.addChild(node);
         },
 
         resetDraw: function () {
-            this.drawing1.clear();
-            this.drawing2.clear();
-            this.drawing3.clear();
+            if (this.drawing1) this.drawing1.clear();
+            if (this.nodeGraphics1) this.nodeGraphics1.removeAllChildren();
         },
 
         toggleDrawDice1Clicked: function () {
-            if (!this.toggleDice1.isChecked) {
-                this.drawing1.clear();
-            } else {
-                this.drawDice1(this.cacheList);
-            }
+            this.draw(this.cacheList);
         },
 
         toggleDrawDice2Clicked: function () {
-            if (!this.toggleDice2.isChecked) {
-                this.drawing2.clear();
-            } else {
-                this.drawDice2(this.cacheList);
-            }
+            this.draw(this.cacheList);
         },
 
         toggleDrawDice3Clicked: function () {
-            if (!this.toggleDice3.isChecked) {
-                this.drawing3.clear();
-            } else {
-                this.drawDice3(this.cacheList);
-            }
+            this.draw(this.cacheList);
         },
     });
 }).call(this);

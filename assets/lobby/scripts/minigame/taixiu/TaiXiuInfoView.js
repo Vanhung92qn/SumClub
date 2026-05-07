@@ -11,8 +11,6 @@ var helper = require("Helper");
   cc.TaiXiuInfoView = cc.Class({
     extends: cc.Component,
     properties: {
-      nodeTornado: cc.Node,
-      led: cc.Node,
       animationBigTimer: cc.Animation,
       nodeBGTimer: cc.Node,
       lbSessionID: cc.Label,
@@ -35,7 +33,6 @@ var helper = require("Helper");
         cc.Animation
       );
       this.reset();
-      this.animationTornado = this.nodeTornado.getComponent(cc.Animation);
       this.Jackpot.string = "0";
     },
 
@@ -56,9 +53,6 @@ var helper = require("Helper");
     },
 
     reset: function () {
-      this.isShowTornado1 = false;
-      this.isShowTornado2 = false;
-      this.isShowTornado3 = false;
       this.currentState = 999;
       this.lastTime = 999;
     },
@@ -154,55 +148,25 @@ var helper = require("Helper");
           this.lbBigTimer.node.color = time > 5 ? cc.Color.WHITE : cc.Color.RED;
           this.lbTimer.string = time;
           if (time <= taiXiuConfig.TIME_FAST) {
-            this.nodeTornado.active = true;
-            this.led.active = true;
-            //chua play -> play
             if (this.lastTime !== time) {
-              if (!this.isShowTornado2) {
-                this.animationTornado.play("iconRotateReverse2x");
-                this.isShowTornado2 = true;
-              }
               this.animationBigTimer.play('timerFast');
             }
           } else if (time <= taiXiuConfig.TIME_ENABLE_TORNADO) {
-            this.nodeTornado.active = true;
-            this.led.active = true;
-            //chua play -> play
             if (this.lastTime !== time) {
-              if (!this.isShowTornado1) {
-                this.animationTornado.play("iconRotateReverse");
-                this.isShowTornado1 = true;
-              }
               this.animationBigTimer.play('timer');
             }
           } else {
-            this.isShowTornado1 = false;
-            this.isShowTornado2 = false;
-            this.isShowTornado3 = false;
-            //chua play -> play
-            if (this.lastTime !== time) {
-            }
             this.animationBigTimer.play('timer');
           }
-
           break;
         case cc.TaiXiuState.END_BETTING: //15
-          //kiem tra thoi gian de dieu chinh animation
-          this.nodeTornado.active = true;
-          this.led.active = true;
-          //chua play -> play
           if (this.lastTime !== time) {
-            if (!this.isShowTornado3) {
-              this.animationTornado.play("iconRotateReverse3x");
-              this.isShowTornado3 = true;
-            }
-            this.animationBigTimer.play('timerFast'); //timerSuperFast
+            this.animationBigTimer.play('timerFast');
           }
           this.lbBigTimer.string = time;
-          if (time===2){
+          if (time === 2) {
             this.animationMess.play("openMessage");
             this.lblTextNotiNewGame.string = "Trả tiền cân cửa.";
-            //this.nodeCanCua.active = true;
           }
           if (time === 1 || time <= 2) this.lbTimer.string = 15;
           else this.lbTimer.string = time;
@@ -211,16 +175,10 @@ var helper = require("Helper");
           this.lbTimer.string = time;
           this.lbBigTimer.node.color = cc.Color.WHITE;
           this.lbBigTimer.string = time;
-          this.nodeTornado.active = false;
-          this.led.active = false;
           this.elapsedTime = 0;
           if (time === 10 || time === 5) {
             cc.LobbyController.getInstance().refreshAccountInfo();
           }
-
-          this.isShowTornado1 = false;
-          this.isShowTornado2 = false;
-          this.isShowTornado3 = false;
           break;
 
         case cc.TaiXiuState.PREPARE_NEW_SESSION:
@@ -231,12 +189,6 @@ var helper = require("Helper");
           } else {
             this.lbBigTimer.string = time;
           }
-          this.nodeTornado.active = false;
-          this.led.active = false;
-
-          this.isShowTornado1 = false;
-          this.isShowTornado2 = false;
-          this.isShowTornado3 = false;
           break;
       }
       this.lastTime = time;

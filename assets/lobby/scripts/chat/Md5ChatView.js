@@ -214,7 +214,7 @@ var netConfig = require('NetConfig');
             if (!cc.sys.isNative) {
                 var self = this;
                 setTimeout(function () {
-                    self.editBoxChat.setFocus();
+                    self.editBoxChat.focus();
                 }, 5);
             }
         },
@@ -251,7 +251,7 @@ sendChatClicked: function () {
     if (!cc.sys.isNative) {
         var self = this;
         setTimeout(function () {
-            self.editBoxChat.setFocus();
+            self.editBoxChat.focus();
         }, 5);
     }
 }

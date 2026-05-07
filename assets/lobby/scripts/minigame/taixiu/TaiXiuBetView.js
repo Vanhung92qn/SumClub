@@ -20,8 +20,8 @@
         },
 
         reset: function () {
-            this.lbBetTai.string = '';
-            this.lbBetXiu.string = '';
+            this.lbBetTai.string = '0';
+            this.lbBetXiu.string = '0';
         },
 
         updateBetInfo: function (betInfo) {

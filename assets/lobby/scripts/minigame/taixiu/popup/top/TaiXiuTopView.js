@@ -31,15 +31,16 @@
 
         onTXGetBigWinnersResponse: function (response) {
             var list = response;
-            //var list = slotsHistoryListData;
-            if (list !== null && list.length > 0) {
+            if (list !== null && list.length > 0 && this.taiXiuTopListView) {
                 this.taiXiuTopListView.resetList();
                 this.taiXiuTopListView.initialize(list);
             }
         },
 
         closeClicked: function () {
-            this.taiXiuTopListView.resetList();
+            if (this.taiXiuTopListView) {
+                this.taiXiuTopListView.resetList();
+            }
             this.animation.play('closePopup');
             var self = this;
             var delay = 0.12;

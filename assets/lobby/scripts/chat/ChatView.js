@@ -12,7 +12,9 @@ var netConfig = require('NetConfig');
             editBoxChat: cc.EditBox,
             btnSendChat: cc.Button,
             channelId: 'taixiu',
-			lblTextNotiNewGame: cc.Label,
+            lblTextNotiNewGame: cc.Label,
+            //bg di kem voi label noti, an/hien theo noi dung
+            bgNoti: cc.Node,
         },
 
         onLoad: function () {
@@ -24,6 +26,10 @@ var netConfig = require('NetConfig');
             } else {
                 this.maxChat = 30;
             }
+
+            //bg noti an luc khoi tao
+            if (this.bgNoti) this.bgNoti.active = false;
+            if (this.lblTextNotiNewGame) this.lblTextNotiNewGame.string = '';
         },
 
         onEnable: function () {
@@ -201,18 +207,15 @@ var netConfig = require('NetConfig');
         },
 
         editingReturn: function () {
-			    var minChatAmount = 20000; 
-        var userBalance = cc.BalanceController.getInstance().getBalance();
+            var minChatAmount = 20000;
+            var userBalance = cc.BalanceController.getInstance().getBalance();
 
-
-    if (userBalance < minChatAmount) {
-        cc.PopupController.getInstance().showMessage('Số dư tối thiểu 20k mới đủ điều kiện chat');
-       
-        setTimeout(() => {
-            this.lblTextNotiNewGame.string = '';
-        }, 4000);
-        return; 
-    }
+            if (userBalance < minChatAmount) {
+                cc.PopupController.getInstance().showMessage('Số dư tối thiểu 20k mới đủ điều kiện chat');
+                var selfE = this;
+                setTimeout(function () { selfE.setNoti(''); }, 4000);
+                return;
+            }
             if (this.editBoxChat.string === '') {
                 //thong bao?
 
@@ -226,35 +229,39 @@ var netConfig = require('NetConfig');
             if (!cc.sys.isNative) {
                 var self = this;
                 setTimeout(function () {
-                    self.editBoxChat.setFocus();
+                    self.editBoxChat.focus();
                 }, 5);
             }
         },
 
-sendChatClicked: function () {
-    var minChatAmount = 20000; 
-        var userBalance = cc.BalanceController.getInstance().getBalance();
+setNoti: function (text) {
+    if (this.lblTextNotiNewGame) {
+        this.lblTextNotiNewGame.string = text;
+    }
+    if (this.bgNoti) {
+        this.bgNoti.active = !!text;
+    }
+},
 
+sendChatClicked: function () {
+    var minChatAmount = 20000;
+    var userBalance = cc.BalanceController.getInstance().getBalance();
 
     if (userBalance < minChatAmount) {
         cc.PopupController.getInstance().showMessage('Số dư tối thiểu 20k mới đủ điều kiện chat');
-       
-        setTimeout(() => {
-            this.lblTextNotiNewGame.string = '';
-        }, 4000);
-        return; 
+        var self0 = this;
+        setTimeout(function () { self0.setNoti(''); }, 4000);
+        return;
     }
 
     if (this.editBoxChat.string === '') {
-        this.lblTextNotiNewGame.string = "Bạn cần nhập nội dung tin nhắn trước khi gửi.";
-       
-        setTimeout(() => {
-            this.lblTextNotiNewGame.string = '';
-        }, 4000);
-        return; 
+        this.setNoti("Bạn cần nhập nội dung tin nhắn trước khi gửi.");
+        var self1 = this;
+        setTimeout(function () { self1.setNoti(''); }, 4000);
+        return;
     }
 
-    this.lblTextNotiNewGame.string = '';
+    this.setNoti('');
 
     this.sendRequestOnHub(cc.MethodHubName.SEND_MESSAGE, this.editBoxChat.string);
 
@@ -263,7 +270,7 @@ sendChatClicked: function () {
     if (!cc.sys.isNative) {
         var self = this;
         setTimeout(function () {
-            self.editBoxChat.setFocus();
+            self.editBoxChat.focus();
         }, 5);
     }
 }

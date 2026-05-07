@@ -51,8 +51,8 @@
 
         //reset lai gia tri input
         resetInput: function () {
-            this.lbBetTaiTemp.string = '0';
-            this.lbBetXiuTemp.string = '0';
+            this.lbBetTaiTemp.string = '';
+            this.lbBetXiuTemp.string = '';
 
             // this.lbBetTaiTemp.string = '0';
             // this.lbBetXiuTemp.string = '0';
@@ -134,28 +134,21 @@
 
         //chon gia tri
         betValueClicked: function (event, data) {
-			 let coin = cc.BalanceController.getInstance().getBalance();
-           // if(this.betSide ==cc.TaiXiuMd5BetSide.XIU){
-             //   this.onTextXiuChange(coin)
-           // }else{
-              //  this.onTextTaiChange(coin)
-           // }
-            this.betValue += parseInt(data.toString());
-			if (this.betValue < coin){
-				  this.updateValueBetUI();
-			}else if (coin > 0 && (this.betValue) > coin){
-			this.animationMess.play('openMessage');
-            this.lblTextNotiNewGame.string = 'Bạn không đủ số dư, Đặt tất tay.';
-				//cc.PopupController.getInstance().showMessage('Bạn không đủ số dư, Đặt tất tay.');
-				 this.betValue = coin;
-				  this.updateValueBetUI();
-			}else{
-				this.animationMess.play('openMessage');
-            this.lblTextNotiNewGame.string = 'Bạn không đủ số dư.';
-			}
-
-          
+            var coin = cc.BalanceController.getInstance().getBalance();
             this.audioChonSo.play();
+
+            if (coin <= 0) {
+                cc.PopupController.getInstance().showMessage('Bạn không đủ số dư.');
+                return;
+            }
+
+            this.betValue += parseInt(data.toString());
+
+            if (this.betValue > coin) {
+                cc.PopupController.getInstance().showMessage('Bạn không đủ số dư, đặt tất tay.');
+                this.betValue = coin;
+            }
+            this.updateValueBetUI();
         },
 
         //them so
@@ -198,30 +191,22 @@
             }
         },
         //xac nhan bet
-        confirmClicked: function (e,val) {
-            //goi len Hub params(bet, betValue, betSide)
-            
-           
-            
-            if (this.betValue < 1000) {
-				this.animationMess.play('openMessage');
-            this.lblTextNotiNewGame.string = 'Vui lòng nhập tiền đặt!';
-            } else if (cc.BalanceController.getInstance().getBalance() < this.betValue) {
-				this.animationMess.play('openMessage');
-            this.lblTextNotiNewGame.string = 'Số dư của bạn không khả dụng';
-               
-            } else {
-                cc.TaiXiuMd5Controller.getInstance().sendRequestOnHub(cc.MethodHubName.BET, this.betValue, this.betSide);
-            }
-			 this.lbBetXiuTemp.string = 0;
-			  this.lbBetTaiTemp.string = 0;
-           // this.nodeinputtai.active = true;
-			//this.nodeinputxiu.active = true; 
-			//this.slidexiuip.active = false;
-			//this.slidetaiip.active = false;
-           // this.closeInput();
+        confirmClicked: function () {
             this.audioChonSo.play();
-			this.resetInput();
+
+            if (this.betValue < 1000) {
+                cc.PopupController.getInstance().showMessage('Vui lòng nhập tiền đặt!');
+                return;
+            }
+            if (cc.BalanceController.getInstance().getBalance() < this.betValue) {
+                cc.PopupController.getInstance().showMessage('Số dư của bạn không khả dụng.');
+                return;
+            }
+
+            cc.TaiXiuMd5Controller.getInstance().sendRequestOnHub(cc.MethodHubName.BET, this.betValue, this.betSide);
+            this.lbBetXiuTemp.string = 0;
+            this.lbBetTaiTemp.string = 0;
+            this.resetInput();
         },
 
         //chuyen kieu input

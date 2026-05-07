@@ -29,32 +29,38 @@
 
             this.spacePoint = (this.spaceY * this.maxItemPerCol) / (this.maxSum - this.minSum);
 
-            this.drawing = this.nodeGraphics.getComponent(cc.Graphics);
-            this.drawing.lineWidth = 2;
-            this.drawing.strokeColor = cc.Color.YELLOW;
+            if (this.nodeGraphics) {
+                this.drawing = this.nodeGraphics.getComponent(cc.Graphics);
+                if (this.drawing) {
+                    this.drawing.lineWidth = 2;
+                    this.drawing.strokeColor = cc.Color.YELLOW;
+                }
+            }
+            if (!this.drawing) cc.warn('[GraphDiceSum] nodeGraphics chua wire hoac thieu cc.Graphics');
         },
 
         draw: function (list) {
+            if (!this.drawing) return;
+            if (!list || !list.length) return;
+
             var lastItem = list[0];
             var result = lastItem.BetSide === cc.TaiXiuBetSide.TAI ? 'TÀI' : 'XỈU';
-            this.lbSessionID.string = 'Phiên gần nhất: #' + lastItem.SessionId + '';
-            this.lbResult.string = result + ' ' + lastItem.DiceSum + ' (' + lastItem.FirstDice + '-' + lastItem.SecondDice + '-' + lastItem.ThirdDice + ')';
+            if (this.lbSessionID) this.lbSessionID.string = 'Phiên gần nhất: #' + lastItem.SessionId + '';
+            if (this.lbResult) this.lbResult.string = result + ' ' + lastItem.DiceSum + ' (' + lastItem.FirstDice + '-' + lastItem.SecondDice + '-' + lastItem.ThirdDice + ')';
 
             this.cacheList = list;
-
             this.drawPoints = [];
 
             var self = this;
-            var index = 0;
-            list.forEach(function (item) {
-                self.createNode(item, index);
-                index++;
+            list.forEach(function (item, idx) {
+                self.createNode(item, idx);
             });
 
             this.strokeLine();
         },
 
         createNode: function (item, colIndex) {
+            if (!this.drawing) return;
             //toa do X
             var posX = this.rootPosX - (colIndex * this.spaceX);
             //toa do Y
@@ -65,19 +71,25 @@
                 this.drawing.moveTo(posX, posY);
             }
 
-            if (item.BetSide === cc.TaiXiuBetSide.TAI) {
-                var nodeView = cc.instantiate(this.nodeTaiTemp);
-            } else {
-                nodeView = cc.instantiate(this.nodeXiuTemp);
+            //spawn node Tai/Xiu neu da wire template + parent
+            if (this.nodeParent) {
+                var template = (item.BetSide === cc.TaiXiuBetSide.TAI) ? this.nodeTaiTemp : this.nodeXiuTemp;
+                if (template) {
+                    var nodeView = cc.instantiate(template);
+                    nodeView.parent = this.nodeParent;
+                    nodeView.position = cc.v2(posX, posY);
+                    var sp = nodeView.getComponent(cc.Sprite);
+                    if (sp && this.sfTaiXiu && this.sfTaiXiu[item.DiceSum - 3]) {
+                        sp.spriteFrame = this.sfTaiXiu[item.DiceSum - 3];
+                    }
+                }
             }
-            nodeView.parent = this.nodeParent;
-            nodeView.position = cc.v2(posX, posY);
 
             this.drawPoints.push(cc.v2(posX, posY));
-			nodeView.getComponent(cc.Sprite).spriteFrame = this.sfTaiXiu[item.DiceSum - 3];
         },
 
         strokeLine: function () {
+            if (!this.drawing) return;
             var self = this;
             this.drawPoints.forEach(function (point) {
                 self.drawing.lineTo(point.x, point.y);
@@ -87,12 +99,8 @@
         },
 
         resetDraw: function () {
-            //xoa cac node con
-            var children = this.nodeParent.children;
-            for (var i = children.length - 1; i >= 0; i--) {
-                this.nodeParent.removeChild(children[i]);
-            }
-            this.drawing.clear();
+            if (this.nodeParent) this.nodeParent.removeAllChildren();
+            if (this.drawing) this.drawing.clear();
         },
 
         toggleDrawDiceSumClicked: function () {

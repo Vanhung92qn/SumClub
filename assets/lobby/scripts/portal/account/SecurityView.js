@@ -506,7 +506,7 @@ var netConfig = require('NetConfig');
             updatePhoneCommand.execute(this);
         },
         clickopenketsat: function () {
-            cc.AccountController.getInstance().activeTab(cc.AccountTab.KET_SATK);
+            cc.AccountController.getInstance().activeTab(cc.AccountTab.KET_SAT);
         },
         activeLoginSecurityClicked: function () {
             var updateAuthenTypeCommand = new cc.UpdateAuthenTypeCommand;
@@ -610,8 +610,9 @@ var netConfig = require('NetConfig');
                 self.animation.stop();
                 if (self.isOpenFromLobby) {
                     cc.LobbyController.getInstance().destroySecurityView();
-                } else
-                    self.node.active = false;
+                } else {
+                    cc.LobbyController.getInstance().destroyAccountView();
+                }
             }, this, 1, 0, delay, false);
         },
 

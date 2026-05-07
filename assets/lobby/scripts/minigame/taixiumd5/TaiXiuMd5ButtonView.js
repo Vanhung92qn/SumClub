@@ -35,15 +35,15 @@
             cc.TaiXiuMd5Controller.getInstance().setIsNan(this.isNan);
 
             //Chat
-            this.isChat = false;
-            this.nodeChat.active = false;
+            this.isChat = true;
+            this.nodeChat.active = true;
+            if (this.spriteChat && this.sfChats && this.sfChats.length) {
+                this.spriteChat.spriteFrame = this.sfChats[0];
+            }
         },
 
         onEnable: function () {
-            var self = this;
-            cc.director.getScheduler().schedule(function () {
-                self.nodeChat.active = false;
-            }, this, 0, 0, 2, false);
+            this.nodeChat.active = true;
         },
 
         onDestroy: function () {

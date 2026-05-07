@@ -202,6 +202,17 @@
             return this.taiXiuMd5ResultEffectView.playEffectWin(amount);
         };
 
+        //pending win (che do Nan: doi user ran xong moi play)
+        TaiXiuMd5Controller.prototype.setPendingWin = function (award, balance) {
+            this.pendingWin = { award: award, balance: balance };
+        };
+        TaiXiuMd5Controller.prototype.getPendingWin = function () {
+            return this.pendingWin;
+        };
+        TaiXiuMd5Controller.prototype.clearPendingWin = function () {
+            this.pendingWin = null;
+        };
+
         //BET VIEW
         TaiXiuMd5Controller.prototype.updateBetInfoView = function (betInfo) {
             if (this.taiXiuMd5BetView)

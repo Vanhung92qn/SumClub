@@ -114,6 +114,8 @@ var netConfig = require("NetConfig");
       CasinoLive: cc.Node,
       nodeEventTop: cc.Node,
       nodeguest: cc.Node,
+      editBoxUsernameGuest: cc.EditBox,
+      editBoxPasswordGuest: cc.EditBox,
       //Esports
       lbJpbaucua: cc.Label,
       lbJpxocdia: cc.Label,
@@ -221,6 +223,46 @@ var netConfig = require("NetConfig");
       this.AudioClick.loop = false;
       this.AudioClick.play();
       cc.sys.openURL("https://t.me/s86club");
+    },
+
+    onLogoutClicked: function () {
+      this.AudioClick.loop = false;
+      this.AudioClick.play();
+      if (cc.LoginController.getInstance().checkLogin()) {
+        cc.LobbyController.getInstance().showPopupLogout();
+      }
+    },
+
+    onVipClicked: function () {
+      this.AudioClick.loop = false;
+      this.AudioClick.play();
+      if (cc.LoginController.getInstance().checkLogin()) {
+        cc.LobbyController.getInstance().createAccountView(cc.AccountTab.VIP);
+      }
+    },
+
+    onSecurityClicked: function () {
+      this.AudioClick.loop = false;
+      this.AudioClick.play();
+      if (cc.LoginController.getInstance().checkLogin()) {
+        cc.LobbyController.getInstance().createAccountView(cc.AccountTab.SECURITY);
+      }
+    },
+
+    onSafeBoxClicked: function () {
+      this.AudioClick.loop = false;
+      this.AudioClick.play();
+      if (cc.LoginController.getInstance().checkLogin()) {
+        cc.LobbyController.getInstance().createAccountView(cc.AccountTab.KET_SAT);
+      }
+    },
+
+    onTransferClicked: function () {
+      this.AudioClick.loop = false;
+      this.AudioClick.play();
+      if (cc.LoginController.getInstance().checkLogin()) {
+        cc.LobbyController.getInstance().createShopCastOutView(cc.ShopTab.TRANSFER);
+      }
     },
 
     actsodienthoai() {
@@ -479,6 +521,22 @@ var netConfig = require("NetConfig");
       this.nodeguest.active = false;
     },
 
+    loginGuestClicked: function () {
+      this.AudioClick.loop = false;
+      this.AudioClick.play();
+
+      var username = this.editBoxUsernameGuest ? this.editBoxUsernameGuest.string : '';
+      var password = this.editBoxPasswordGuest ? this.editBoxPasswordGuest.string : '';
+
+      this.createLoginView();
+      var loginView = this.nodeLoginView && this.nodeLoginView.getComponent(cc.LoginView);
+      if (!loginView) return;
+
+      if (username !== '') loginView.editBoxUsername.string = username;
+      if (password !== '') loginView.editBoxPassword.string = password;
+    },
+
+
     destroyShopCastOutView: function () {
       // this.activeNodeLobby(true);
 
@@ -549,178 +607,160 @@ var netConfig = require("NetConfig");
     //  Hiện tại (Phase 1): Chỉ game nào đã tách bundle mới đi vào đây.
     //  Các game chưa tách vẫn dùng cc.loader.loadRes bên dưới.
     // ─────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────
+    //  Map gameId → cấu hình load (node tracker, popup vs full-screen, progress UI).
+    //  Dùng cho cả flow load bundle và loading bar generic.
+    //  - popup: minigame nổi trên lobby (không gọi activeNodeLobby/setGameId).
+    //  - !popup: full-screen, nodeSlotsView, ẩn lobby + setGameId.
+    // ─────────────────────────────────────────────────────────
+    _getGameLoadCfg: function (gameId) {
+      var MAP = cc.LobbyView._GAME_LOAD_CFG;
+      if (!MAP) {
+        MAP = cc.LobbyView._GAME_LOAD_CFG = {};
+        MAP[cc.GameId.TAI_XIU]          = { node: 'nodeTaiXiu',         popup: true,  progress: 'progressTaiXiu',         label: 'lbLoadingTaiXiu',         name: 'Tài Xỉu' };
+        MAP[cc.GameId.TAI_XIU_MD5]      = { node: 'nodeTaiXiuMd5',      popup: true,  progress: 'progressTaiXiuMd5',      label: 'lbLoadingTaiXiuMd5',      name: 'Tài Xỉu MD5' };
+        MAP[cc.GameId.TAI_XIU_SIEU_TOC] = { node: 'nodeTaiXiuSieuToc',  popup: true,  progress: 'progressTaiXiuSieuToc',  label: 'lbLoadingTaiXiuSieuToc',  name: 'Tài Xỉu Siêu Tốc' };
+        MAP[cc.GameId.SICBO]            = { node: 'nodeSicbo',          popup: true,  progress: null,                     label: 'lbLoadingSicbo',          name: 'Sicbo' };
+        MAP[cc.GameId.MINI_POKER]       = { node: 'nodeMiniPoker',      popup: true,  progress: 'progressMiniPoker',      label: 'lbLoadingMiniPoker',      name: 'Mini Poker' };
+        MAP[cc.GameId.SEVEN77]          = { node: 'node777',            popup: true,  progress: 'progress777',            label: 'lbLoading777',            name: '777' };
+        MAP[cc.GameId.BLOCK_BUSTER]     = { node: 'nodeTQ',             popup: true,  progress: 'progressTQ',             label: 'lbLoadingTQ',             name: 'Tam Quốc' };
+
+        MAP[cc.GameId.XOC_XOC]          = { node: 'nodeSlotsView',      popup: false, progress: 'progressXocXoc',         label: 'lbLoadingXocXoc',         name: 'Xóc Đĩa' };
+        MAP[cc.GameId.BAUCUA]           = { node: 'nodeSlotsView',      popup: false, progress: 'progressBauCua',         label: 'lbLoadingBauCua',         name: 'Bầu Cua' };
+        MAP[cc.GameId.DRAGON_TIGER]     = { node: 'nodeSlotsView',      popup: false, progress: 'progressDragonTiger',    label: 'lbLoadingDragonTiger',    name: 'Dragon Tiger' };
+        MAP[cc.GameId.LODE]             = { node: 'nodeSlotsView',      popup: false, progress: 'progressLoDe',           label: 'lbLoadingLoDe',           name: 'Lô Đề' };
+        MAP[cc.GameId.SHOOT_FISH]       = { node: 'nodeSlotsView',      popup: false, progress: 'progressBanCa',          label: 'lbLoadingShootFish',      name: 'Bắn Cá' };
+        MAP[cc.GameId.EGYPT]            = { node: 'nodeSlotsView',      popup: false, progress: 'progressEgypt',          label: 'lbLoadingEgypt',          name: 'Egypt' };
+        MAP[cc.GameId.AQUARIUM]         = { node: 'nodeSlotsView',      popup: false, progress: 'progressBarAquarium',    label: 'lbLoadingAquarium',       name: 'Aquarium' };
+        MAP[cc.GameId.DRAGON_BALL]      = { node: 'nodeSlotsView',      popup: false, progress: 'progressDragonBall',     label: 'lbLoadingDragonBall',     name: 'Dragon Ball' };
+        MAP[cc.GameId.COWBOY]           = { node: 'nodeSlotsView',      popup: false, progress: 'progressCowboy',         label: 'lbLoadingCowboy',         name: 'Cowboy' };
+        MAP[cc.GameId.THREE_KINGDOM]    = { node: 'nodeSlotsView',      popup: false, progress: 'progressTK',             label: 'lbLoadingTK',             name: 'Three Kingdom' };
+        MAP[cc.GameId.POKER_TEXAS]      = { node: 'nodeSlotsView',      popup: false, progress: 'progressPoker',          label: 'lbLoadingPoker',          name: 'Poker Texas' };
+        MAP[cc.GameId.BA_CAY]           = { node: 'nodeSlotsView',      popup: false, progress: 'progressThreeCards',     label: 'lbLoadingThreeCards',     name: 'Ba Cây' };
+        MAP[cc.GameId.BACCARAT]         = { node: 'nodeSlotsView',      popup: false, progress: 'progressBaccarat',       label: 'lbLoadingBaccarat',       name: 'Baccarat' };
+        MAP[cc.GameId.MAU_BINH]         = { node: 'nodeSlotsView',      popup: false, progress: 'progressMB',             label: 'lbLoadingMB',             name: 'Mậu Binh' };
+        MAP[cc.GameId.TIEN_LEN_MN]      = { node: 'nodeSlotsView',      popup: false, progress: 'progressTLMN',           label: 'lbLoadingTLMN',           name: 'Tiến Lên MN' };
+        MAP[cc.GameId.TIEN_LEN_MN_SOLO] = { node: 'nodeSlotsView',      popup: false, progress: 'progressTLMNSolo',       label: 'lbLoadingTLMNSolo',       name: 'Tiến Lên MN Solo' };
+      }
+      return MAP[gameId] || null;
+    },
+
+    // Bật loading bar fake-progress cho 1 game (0 → 100% mượt). Idempotent.
+    _startGameLoadingBar: function (cfg) {
+      if (!cfg) return;
+      var pb = cfg.progress ? this[cfg.progress] : null;
+      var lb = cfg.label    ? this[cfg.label]    : null;
+      if (!pb && !lb) return;
+
+      if (lb && lb.node && lb.node.parent) lb.node.parent.active = true;
+      if (lb) lb.string = "0%";
+      if (pb) pb.progress = 0;
+
+      if (this._loadingTick) {
+        this.unschedule(this._loadingTick);
+        this._loadingTick = null;
+      }
+      var p = 0;
+      this._loadingTick = function () {
+        if (p < 1) {
+          p += 0.04;
+          if (p > 1) p = 1;
+        }
+        if (pb) pb.progress = p;
+        if (lb) lb.string = Math.round(p * 100) + "%";
+      };
+      this.schedule(this._loadingTick, 0.05);
+    },
+
+    _stopGameLoadingBar: function (cfg, isSuccess) {
+      if (!cfg) return;
+      var pb = cfg.progress ? this[cfg.progress] : null;
+      var lb = cfg.label    ? this[cfg.label]    : null;
+
+      if (this._loadingTick) {
+        this.unschedule(this._loadingTick);
+        this._loadingTick = null;
+      }
+
+      if (isSuccess) {
+        if (pb) pb.progress = 1;
+        if (lb) lb.string = "100%";
+      } else {
+        if (pb) pb.progress = 0;
+        if (lb) lb.string = "0%";
+      }
+      if (lb && lb.node && lb.node.parent) lb.node.parent.active = false;
+    },
+
     _createDynamicViewFromBundle: function (gameId) {
       var self = this;
+      var cfg = this._getGameLoadCfg(gameId);
 
-      // Mini-game dạng popup (không full-screen): Tài Xỉu
-      if (gameId === cc.GameId.TAI_XIU) {
-        // giữ nguyên behaviour cũ: dùng nodeTaiXiu, KHÔNG ẩn lobby
-        if (this.nodeTaiXiu !== null || this.isLoading) return;
-
+      // Game không có config → fallback generic full-screen + busy spinner.
+      if (!cfg) {
+        if (this.nodeSlotsView !== null || this.isLoading) return;
         this.isLoading = true;
-        // ✅ Bắt đầu loading bar Tài Xỉu (fake progress 0 → 90%)
-        this._startTaiXiuLoadingBar();
-
+        cc.PopupController.getInstance().showBusy();
         cc.BundleLoader.getInstance().loadGame(gameId, function (err, bundle) {
           if (err) {
             self.isLoading = false;
-            self._stopTaiXiuLoadingBar(false);
-            cc.PopupController.getInstance().showMessageError('Không thể tải game Tài Xỉu. Vui lòng thử lại!');
+            cc.PopupController.getInstance().hideBusy();
+            cc.PopupController.getInstance().showMessageError('Không thể tải game. Vui lòng thử lại!');
             return;
           }
-
           var prefabPath = cc.GameBundleConfig.getMainPrefab(gameId);
           bundle.load(prefabPath, cc.Prefab, function (err2, prefab) {
             self.isLoading = false;
-
+            cc.PopupController.getInstance().hideBusy();
             if (err2) {
-              self._stopTaiXiuLoadingBar(false);
-              console.error('[LobbyView] Load prefab Tài Xỉu thất bại:', prefabPath, err2);
-              cc.PopupController.getInstance().showMessageError('Không thể mở game Tài Xỉu!');
+              console.error('[LobbyView] Load prefab thất bại:', prefabPath, err2);
+              cc.PopupController.getInstance().showMessageError('Không thể mở game!');
               return;
             }
-
-            // ✅ Hoàn tất loading bar
-            self._stopTaiXiuLoadingBar(true);
-
-            // ✅ Spawn vào miniGameLayer thay vì this.node
-            self.nodeTaiXiu = self.createMiniGameView(prefab);
+            cc.RoomController.getInstance().setGameId(gameId);
+            self.nodeSlotsView = self.createView(prefab);
+            self.activeNodeLobby(false);
           });
         });
-
         return;
       }
 
-      // Mini-game dạng popup: Tài Xỉu MD5
-      if (gameId === cc.GameId.TAI_XIU_MD5) {
-        if (this.nodeTaiXiuMd5 !== null || this.isLoading) return;
-
-        this.isLoading = true;
-        this._startMd5LoadingBar();
-
-        cc.BundleLoader.getInstance().loadGame(gameId, function (err, bundle) {
-          if (err) {
-            self.isLoading = false;
-            self._stopMd5LoadingBar(false);
-            cc.PopupController.getInstance().showMessageError('Không thể tải game Tài Xỉu MD5. Vui lòng thử lại!');
-            return;
-          }
-
-          var prefabPath = cc.GameBundleConfig.getMainPrefab(gameId);
-          bundle.load(prefabPath, cc.Prefab, function (err2, prefab) {
-            self.isLoading = false;
-
-            if (err2) {
-              self._stopMd5LoadingBar(false);
-              console.error('[LobbyView] Load prefab Tài Xỉu MD5 thất bại:', prefabPath, err2);
-              cc.PopupController.getInstance().showMessageError('Không thể mở game Tài Xỉu MD5!');
-              return;
-            }
-
-            self._stopMd5LoadingBar(true);
-            self.nodeTaiXiuMd5 = self.createMiniGameView(prefab);
-          });
-        });
-
-        return;
-      }
-
-      // Mini-game dạng popup: Tài Xỉu Siêu Tốc
-      if (gameId === cc.GameId.TAI_XIU_SIEU_TOC) {
-        if (this.nodeTaiXiuSieuToc !== null || this.isLoading) return;
-
-        this.isLoading = true;
-        this._startSieuTocLoadingBar();
-
-        cc.BundleLoader.getInstance().loadGame(gameId, function (err, bundle) {
-          if (err) {
-            self.isLoading = false;
-            self._stopSieuTocLoadingBar(false);
-            cc.PopupController.getInstance().showMessageError('Không thể tải game Tài Xỉu Siêu Tốc. Vui lòng thử lại!');
-            return;
-          }
-
-          var prefabPath = cc.GameBundleConfig.getMainPrefab(gameId);
-          bundle.load(prefabPath, cc.Prefab, function (err2, prefab) {
-            self.isLoading = false;
-
-            if (err2) {
-              self._stopSieuTocLoadingBar(false);
-              console.error('[LobbyView] Load prefab Tài Xỉu Siêu Tốc thất bại:', prefabPath, err2);
-              cc.PopupController.getInstance().showMessageError('Không thể mở game Tài Xỉu Siêu Tốc!');
-              return;
-            }
-
-            self._stopSieuTocLoadingBar(true);
-            self.nodeTaiXiuSieuToc = self.createMiniGameView(prefab);
-          });
-        });
-
-        return;
-      }
-
-      // Mini-game dạng popup: Sicbo (giữ nodeSicbo, KHÔNG ẩn lobby)
-      if (gameId === cc.GameId.SICBO) {
-        if (this.nodeSicbo !== null || this.isLoading) return;
-
-        this.isLoading = true;
-        this._startSicboLoadingBar();
-
-        cc.BundleLoader.getInstance().loadGame(gameId, function (err, bundle) {
-          if (err) {
-            self.isLoading = false;
-            self._stopSicboLoadingBar(false);
-            cc.PopupController.getInstance().showMessageError('Không thể tải game Sicbo. Vui lòng thử lại!');
-            return;
-          }
-
-          var prefabPath = cc.GameBundleConfig.getMainPrefab(gameId);
-          bundle.load(prefabPath, cc.Prefab, function (err2, prefab) {
-            self.isLoading = false;
-
-            if (err2) {
-              self._stopSicboLoadingBar(false);
-              console.error('[LobbyView] Load prefab Sicbo thất bại:', prefabPath, err2);
-              cc.PopupController.getInstance().showMessageError('Không thể mở game Sicbo!');
-              return;
-            }
-
-            self._stopSicboLoadingBar(true);
-            self.nodeSicbo = self.createMiniGameView(prefab);
-          });
-        });
-
-        return;
-      }
-
-      // Mặc định: game full-screen (slots, cardgames...) → ẩn lobby
-      if (this.nodeSlotsView !== null || this.isLoading) return;
+      // Đã có instance hoặc đang load 1 game khác → bỏ qua
+      if (this[cfg.node] || this.isLoading) return;
 
       this.isLoading = true;
-      cc.PopupController.getInstance().showBusy();
+      this._startGameLoadingBar(cfg);
 
       cc.BundleLoader.getInstance().loadGame(gameId, function (err, bundle) {
         if (err) {
           self.isLoading = false;
-          cc.PopupController.getInstance().hideBusy();
-          cc.PopupController.getInstance().showMessageError('Không thể tải game. Vui lòng thử lại!');
+          self._stopGameLoadingBar(cfg, false);
+          cc.PopupController.getInstance().showMessageError('Không thể tải game ' + cfg.name + '. Vui lòng thử lại!');
           return;
         }
 
         var prefabPath = cc.GameBundleConfig.getMainPrefab(gameId);
         bundle.load(prefabPath, cc.Prefab, function (err2, prefab) {
           self.isLoading = false;
-          cc.PopupController.getInstance().hideBusy();
 
           if (err2) {
-            console.error('[LobbyView] Load prefab thất bại:', prefabPath, err2);
-            cc.PopupController.getInstance().showMessageError('Không thể mở game!');
+            self._stopGameLoadingBar(cfg, false);
+            console.error('[LobbyView] Load prefab ' + cfg.name + ' thất bại:', prefabPath, err2);
+            cc.PopupController.getInstance().showMessageError('Không thể mở game ' + cfg.name + '!');
             return;
           }
 
-          cc.RoomController.getInstance().setGameId(gameId);
-          self.nodeSlotsView = self.createView(prefab);
-          self.activeNodeLobby(false);
+          self._stopGameLoadingBar(cfg, true);
+
+          if (cfg.popup) {
+            // Minigame popup: spawn lên miniGameLayer (fallback createView nếu chưa assign).
+            self[cfg.node] = self.createMiniGameView(prefab);
+          } else {
+            // Full-screen: setGameId + ẩn lobby
+            cc.RoomController.getInstance().setGameId(gameId);
+            self[cfg.node] = self.createView(prefab);
+            self.activeNodeLobby(false);
+          }
         });
       });
     },
@@ -1980,195 +2020,6 @@ var netConfig = require("NetConfig");
       
       // Thông báo cho LobbyController
       cc.LobbyController.getInstance().setLobbyActive(true);
-    },
-
-    // ═══════════════════════════════════════════════════════════════
-    //  Loading bar cho Tài Xỉu (fake progress mượt 0 → 90%)
-    // ═══════════════════════════════════════════════════════════════
-    _startTaiXiuLoadingBar: function () {
-      var self = this;
-
-      if (!this.lbLoadingTaiXiu || !this.progressTaiXiu) {
-        return;
-      }
-
-      // Hiện UI loading
-      this.lbLoadingTaiXiu.node.parent.active = true;
-      this._taiXiuLoadingProgress = 0;
-      this.lbLoadingTaiXiu.string = "0%";
-      this.progressTaiXiu.progress = 0;
-
-      // Dừng tick cũ nếu có
-      if (this._taiXiuLoadingTick) {
-        this.unschedule(this._taiXiuLoadingTick);
-        this._taiXiuLoadingTick = null;
-      }
-
-      // Hàm tick tăng dần tới 100%
-      this._taiXiuLoadingTick = function () {
-        // Nếu đã gần 100% thì giữ ở đó, chờ real load xong
-        if (self._taiXiuLoadingProgress >= 1) {
-          self._taiXiuLoadingProgress = 1;
-        } else {
-          self._taiXiuLoadingProgress += 0.04; // tăng mỗi 50ms ~ 1.5s lên 100%
-        }
-
-        self.progressTaiXiu.progress = self._taiXiuLoadingProgress;
-        self.lbLoadingTaiXiu.string = Math.round(self._taiXiuLoadingProgress * 100) + "%";
-      };
-
-      // Tick mỗi 0.05s
-      this.schedule(this._taiXiuLoadingTick, 0.05);
-    },
-
-    _stopTaiXiuLoadingBar: function (isSuccess) {
-      if (!this.lbLoadingTaiXiu || !this.progressTaiXiu) {
-        return;
-      }
-
-      if (this._taiXiuLoadingTick) {
-        this.unschedule(this._taiXiuLoadingTick);
-        this._taiXiuLoadingTick = null;
-      }
-
-      if (isSuccess) {
-        this.progressTaiXiu.progress = 1;
-        this.lbLoadingTaiXiu.string = "100%";
-      } else {
-        this.progressTaiXiu.progress = 0;
-        this.lbLoadingTaiXiu.string = "0%";
-      }
-
-      this.lbLoadingTaiXiu.node.parent.active = false;
-    },
-
-    // ─── Tài Xỉu MD5 Loading Bar ─────────────────────────────────────
-    _startMd5LoadingBar: function () {
-      var self = this;
-      if (!this.lbLoadingTaiXiuMd5 || !this.progressTaiXiuMd5) return;
-
-      this.lbLoadingTaiXiuMd5.node.parent.active = true;
-      this._md5LoadingProgress = 0;
-      this.lbLoadingTaiXiuMd5.string = "0%";
-      this.progressTaiXiuMd5.progress = 0;
-
-      if (this._md5LoadingTick) {
-        this.unschedule(this._md5LoadingTick);
-        this._md5LoadingTick = null;
-      }
-
-      this._md5LoadingTick = function () {
-        if (self._md5LoadingProgress < 1) {
-          self._md5LoadingProgress += 0.04;
-          if (self._md5LoadingProgress > 1) self._md5LoadingProgress = 1;
-        }
-        self.progressTaiXiuMd5.progress = self._md5LoadingProgress;
-        self.lbLoadingTaiXiuMd5.string = Math.round(self._md5LoadingProgress * 100) + "%";
-      };
-
-      this.schedule(this._md5LoadingTick, 0.05);
-    },
-
-    // ─── Sicbo Loading Bar (label-only, khong co progress bar) ─────
-    _startSicboLoadingBar: function () {
-      var self = this;
-      if (!this.lbLoadingSicbo) return;
-
-      this.lbLoadingSicbo.node.parent.active = true;
-      this._sicboLoadingProgress = 0;
-      this.lbLoadingSicbo.string = "0%";
-
-      if (this._sicboLoadingTick) {
-        this.unschedule(this._sicboLoadingTick);
-        this._sicboLoadingTick = null;
-      }
-
-      this._sicboLoadingTick = function () {
-        if (self._sicboLoadingProgress < 1) {
-          self._sicboLoadingProgress += 0.04;
-          if (self._sicboLoadingProgress > 1) self._sicboLoadingProgress = 1;
-        }
-        self.lbLoadingSicbo.string = Math.round(self._sicboLoadingProgress * 100) + "%";
-      };
-
-      this.schedule(this._sicboLoadingTick, 0.05);
-    },
-
-    _stopSicboLoadingBar: function (isSuccess) {
-      if (!this.lbLoadingSicbo) return;
-
-      if (this._sicboLoadingTick) {
-        this.unschedule(this._sicboLoadingTick);
-        this._sicboLoadingTick = null;
-      }
-
-      this.lbLoadingSicbo.string = isSuccess ? "100%" : "0%";
-      this.lbLoadingSicbo.node.parent.active = false;
-    },
-
-    _stopMd5LoadingBar: function (isSuccess) {
-      if (!this.lbLoadingTaiXiuMd5 || !this.progressTaiXiuMd5) return;
-
-      if (this._md5LoadingTick) {
-        this.unschedule(this._md5LoadingTick);
-        this._md5LoadingTick = null;
-      }
-
-      if (isSuccess) {
-        this.progressTaiXiuMd5.progress = 1;
-        this.lbLoadingTaiXiuMd5.string = "100%";
-      } else {
-        this.progressTaiXiuMd5.progress = 0;
-        this.lbLoadingTaiXiuMd5.string = "0%";
-      }
-
-      this.lbLoadingTaiXiuMd5.node.parent.active = false;
-    },
-
-    // ─── Tài Xỉu Siêu Tốc Loading Bar ───────────────────────────────
-    _startSieuTocLoadingBar: function () {
-      var self = this;
-      if (!this.lbLoadingTaiXiuSieuToc || !this.progressTaiXiuSieuToc) return;
-
-      this.lbLoadingTaiXiuSieuToc.node.parent.active = true;
-      this._sieuTocLoadingProgress = 0;
-      this.lbLoadingTaiXiuSieuToc.string = "0%";
-      this.progressTaiXiuSieuToc.progress = 0;
-
-      if (this._sieuTocLoadingTick) {
-        this.unschedule(this._sieuTocLoadingTick);
-        this._sieuTocLoadingTick = null;
-      }
-
-      this._sieuTocLoadingTick = function () {
-        if (self._sieuTocLoadingProgress < 1) {
-          self._sieuTocLoadingProgress += 0.04;
-          if (self._sieuTocLoadingProgress > 1) self._sieuTocLoadingProgress = 1;
-        }
-        self.progressTaiXiuSieuToc.progress = self._sieuTocLoadingProgress;
-        self.lbLoadingTaiXiuSieuToc.string = Math.round(self._sieuTocLoadingProgress * 100) + "%";
-      };
-
-      this.schedule(this._sieuTocLoadingTick, 0.05);
-    },
-
-    _stopSieuTocLoadingBar: function (isSuccess) {
-      if (!this.lbLoadingTaiXiuSieuToc || !this.progressTaiXiuSieuToc) return;
-
-      if (this._sieuTocLoadingTick) {
-        this.unschedule(this._sieuTocLoadingTick);
-        this._sieuTocLoadingTick = null;
-      }
-
-      if (isSuccess) {
-        this.progressTaiXiuSieuToc.progress = 1;
-        this.lbLoadingTaiXiuSieuToc.string = "100%";
-      } else {
-        this.progressTaiXiuSieuToc.progress = 0;
-        this.lbLoadingTaiXiuSieuToc.string = "0%";
-      }
-
-      this.lbLoadingTaiXiuSieuToc.node.parent.active = false;
     },
 
     activeNodeTopBar: function (enable) {

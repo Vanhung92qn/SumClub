@@ -21,19 +21,35 @@
         // use this for initialization
         onLoad: function () {
             cc.AccountController.getInstance().setAccountView(this);
+            this.allTabNodes = [
+                this.nodeProfile,
+                this.nodeVIP,
+                this.nodeSafePlus,
+                this.nodeSecurity,
+                this.nodeChangePass,
+                this.nodeInbox,
+                this.nodeKetSat,
+                this.nodeDangxuat,
+                this.nodeSoDienThoai,
+            ];
+            this.node.zIndex = cc.NoteDepth.POPUP_PORTAL;
+            this.animation = this.node.getComponent(cc.Animation);
+            // Tat het tab tu dau de tranh flicker khi onEnable switch tab
+            for (var i = 0; i < this.allTabNodes.length; i++) {
+                if (this.allTabNodes[i]) this.allTabNodes[i].active = false;
+            }
             this.nodeTabActive = this.nodeProfile;
             this.currentTab = cc.AccountTab.PROFILE;
-            this.node.zIndex =  cc.NoteDepth.POPUP_PORTAL;
-            this.animation = this.node.getComponent(cc.Animation);
         },
 
         onEnable: function () {
             this.animation.play('openPopup');
             var startTab = cc.Tool.getInstance().getItem('@startTab');
-            var self = this;
-            cc.director.getScheduler().schedule(function () {
-                self.activeTab(startTab);
-            }, this, 0, 0, 0.3, false);
+            cc.Tool.getInstance().setItem('@startTab', null);
+            if (!startTab || startTab === 'null' || startTab === 'undefined') {
+                startTab = cc.AccountTab.PROFILE;
+            }
+            this.activeTab(startTab);
         },
 
         changeTabClicked: function (event, data) {
@@ -43,73 +59,29 @@
             cc.DDNA.getInstance().uiInteraction(cc.DDNAUILocation.ACCOUNT_INFO, data.toString(), cc.DDNAUIType.BUTTON);
         },
 
-        activeTab (tabName) {        
+        _getTabNode: function (tabName) {
             switch (tabName) {
-                case cc.AccountTab.PROFILE:
-                    this.nodeTabActive.active = false;
-                    this.nodeChangePass.active = false;
-                    this.nodeInbox.active = false;
-					this.nodeSoDienThoai.active = false;
-					this.nodeDangxuat.active = false;
-                    this.nodeTabActive = this.nodeProfile;
-                    break;
-				
-                case cc.AccountTab.VIP:
-                    this.nodeTabActive = this.nodeVIP;
-                    break;
-                case cc.AccountTab.SAFE_PLUS:
-                    this.nodeTabActive = this.nodeSafePlus;
-                    break;
-                case cc.AccountTab.SECURITY:                
-                    this.nodeTabActive = this.nodeSecurity;
-                    break;
-                case cc.AccountTab.CHANGE_PASS:
-                    this.nodeTabActive.active = false;
-                    this.nodeProfile.active = false;
-                    this.nodeInbox.active = false;
-					this.nodeDangxuat.active = false;
-					this.nodeKetSat.active = false;
-					this.nodeSoDienThoai.active = false;
-                    this.nodeTabActive = this.nodeChangePass;
-                    break;
-				 case cc.AccountTab.KET_SATK:
-                    this.nodeTabActive.active = false;
-                    this.nodeProfile.active = false;
-                    this.nodeInbox.active = false;
-					this.nodeChangePass.active = false;
-					this.nodeDangxuat.active = false;
-					this.nodeSoDienThoai.active = false;
-                    this.nodeTabActive = this.nodeKetSat;
-                    break;	
-				 case cc.AccountTab.DANG_XUAT:
-                    this.nodeTabActive.active = false;
-                    this.nodeProfile.active = false;
-                    this.nodeInbox.active = false;
-					this.nodeChangePass.active = false;
-					this.nodeSoDienThoai.active = false;
-                    this.nodeTabActive = this.nodeDangxuat;
-                    break;		
-				
-			    case cc.AccountTab.REG_PHONE:
-                    this.nodeTabActive.active = false;
-                    this.nodeProfile.active = false;
-					this.nodeDangxuat.active = false;
-                    this.nodeInbox.active = false;
-					this.nodeKetSat.active = false;
-                    this.nodeTabActive = this.nodeSoDienThoai;
-                    break;
-                case cc.AccountTab.INBOX:
-                    this.nodeTabActive.active = false;
-                    this.nodeProfile.active = false;
-                    this.nodeChangePass.active = false;
-					this.nodeDangxuat.active = false;
-					this.nodeSoDienThoai.active = false;
-					this.nodeKetSat.active = false;
-                    this.nodeTabActive = this.nodeInbox;
-                    break;
+                case cc.AccountTab.PROFILE:     return this.nodeProfile;
+                case cc.AccountTab.VIP:         return this.nodeVIP;
+                case cc.AccountTab.SAFE_PLUS:   return this.nodeSafePlus;
+                case cc.AccountTab.SECURITY:    return this.nodeSecurity;
+                case cc.AccountTab.CHANGE_PASS: return this.nodeChangePass;
+                case cc.AccountTab.KET_SAT:     return this.nodeKetSat;
+                case cc.AccountTab.DANG_XUAT:   return this.nodeDangxuat;
+                case cc.AccountTab.REG_PHONE:   return this.nodeSoDienThoai;
+                case cc.AccountTab.INBOX:       return this.nodeInbox;
+                default:                        return this.nodeProfile;
             }
-            this.nodeTabActive.active = true;
+        },
 
+        activeTab(tabName) {
+            var nextNode = this._getTabNode(tabName);
+            if (!nextNode) return;
+            for (var i = 0; i < this.allTabNodes.length; i++) {
+                if (this.allTabNodes[i]) this.allTabNodes[i].active = false;
+            }
+            nextNode.active = true;
+            this.nodeTabActive = nextNode;
             this.currentTab = tabName;
         },
 		  quickLogoutClicked: function () {
