@@ -99,25 +99,31 @@ var netConfig = require('NetConfig');
             self.lbMessage.node.active = true;
             self.lbMessage.string = 'Đang tải dữ liệu...';
 
-            // ── BƯỚC 1: Kiểm tra bundle lobby đã load chưa (tránh load lại)
-            var existingBundle = cc.assetManager.getBundle('lobby');
-            if (existingBundle) {
-                console.log('[LoadingView] Lobby bundle already cached, skip reload.');
-                self._onLobbyBundleReady();
-                return;
-            }
+            // ── BƯỚC 1: Load song song common + prefabs + lobby
+            //  → Tránh lazy round-trip khi MainGame ref asset trong common/prefabs
+            var bundleNames = ['common', 'prefabs', 'lobby'];
+            var loaded = 0;
+            var failed = false;
 
-            // ── BƯỚC 2: Load bundle lobby
-            console.log('[LoadingView] Loading lobby bundle...');
-            cc.assetManager.loadBundle('lobby', function (err, bundle) {
-                if (err) {
-                    console.error('[LoadingView] FAILED to load lobby bundle:', err);
-                    self.lbMessage.string = '⚠ Lỗi tải dữ liệu!\nVui lòng khởi động lại ứng dụng.';
-                    self.nodeButtonTry.active = true;
+            bundleNames.forEach(function (name) {
+                if (cc.assetManager.getBundle(name)) {
+                    loaded++;
+                    if (loaded === bundleNames.length && !failed) self._onLobbyBundleReady();
                     return;
                 }
-                console.log('[LoadingView] Lobby bundle loaded successfully.');
-                self._onLobbyBundleReady();
+                cc.assetManager.loadBundle(name, function (err) {
+                    if (failed) return;
+                    if (err) {
+                        failed = true;
+                        console.error('[LoadingView] FAILED to load bundle:', name, err);
+                        self.lbMessage.string = '⚠ Lỗi tải dữ liệu!\nVui lòng khởi động lại ứng dụng.';
+                        self.nodeButtonTry.active = true;
+                        return;
+                    }
+                    loaded++;
+                    console.log('[LoadingView] Bundle loaded OK:', name, '(' + loaded + '/' + bundleNames.length + ')');
+                    if (loaded === bundleNames.length) self._onLobbyBundleReady();
+                });
             });
         },
 

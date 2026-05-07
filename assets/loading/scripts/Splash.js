@@ -60,31 +60,36 @@ cc.Class({
     },
 
     // ─────────────────────────────────────────────────────
-    //  BƯỚC 1: Load lobby bundle trước khi load scene
+    //  BƯỚC 1: Load song song common + prefabs + lobby
+    //  → Tránh lazy round-trip khi MainGame ref asset trong common/prefabs
     // ─────────────────────────────────────────────────────
     loadLobbyBundle: function () {
         var self = this;
-
-        // Kiểm tra cache (tránh load lại nếu đã có)
-        var existingBundle = cc.assetManager.getBundle('lobby');
-        if (existingBundle) {
-            console.log('[Splash] Lobby bundle already in cache.');
-            self.loadScene();
-            return;
-        }
+        var bundleNames = ['common', 'prefabs', 'lobby'];
+        var loaded = 0;
+        var failed = false;
 
         self.messageLabel.string = "Đang tải dữ liệu...";
-        console.log('[Splash] Loading lobby bundle...');
 
-        cc.assetManager.loadBundle('lobby', function (err, bundle) {
-            if (err) {
-                console.error('[Splash] FAILED to load lobby bundle:', err);
-                self.messageLabel.string = "⚠ Lỗi tải dữ liệu!\nVui lòng thử lại.";
-                if (self.retryButtonNode) self.retryButtonNode.active = true;
+        bundleNames.forEach(function (name) {
+            if (cc.assetManager.getBundle(name)) {
+                loaded++;
+                if (loaded === bundleNames.length && !failed) self.loadScene();
                 return;
             }
-            console.log('[Splash] Lobby bundle loaded OK.');
-            self.loadScene();
+            cc.assetManager.loadBundle(name, function (err) {
+                if (failed) return;
+                if (err) {
+                    failed = true;
+                    console.error('[Splash] FAILED to load bundle:', name, err);
+                    self.messageLabel.string = "⚠ Lỗi tải dữ liệu!\nVui lòng thử lại.";
+                    if (self.retryButtonNode) self.retryButtonNode.active = true;
+                    return;
+                }
+                loaded++;
+                console.log('[Splash] Bundle loaded OK:', name, '(' + loaded + '/' + bundleNames.length + ')');
+                if (loaded === bundleNames.length) self.loadScene();
+            });
         });
     },
 
