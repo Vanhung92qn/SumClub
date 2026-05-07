@@ -41,29 +41,25 @@
         { value: '11', label: 'MINI_POKER',        bundleName: 'minipoker',     mainPrefab: 'prefabs/minipokerView',      deps: []                },
         { value: '23', label: 'SHOOT_FISH',        bundleName: 'shootFish',     mainPrefab: 'prefabs/ShootFish',          deps: []                },
 
-        // ── SLOTS ───────────────────────────────────────────────────
-        //  TODO: khi tạo bundle 'slots_core' xong, đổi deps về ['slots_core'].
-        //  Hiện tại slots_core CHƯA có → để [] để khỏi 404 lúc load.
-        //  GAINHAY / THUONG_HAI: folder bundle chưa tồn tại → tạm comment
-        //  cho tới khi tạo folder + bật isBundle.
-        { value: '4',  label: 'EGYPT',             bundleName: 'egypt',         mainPrefab: 'prefabs/egyptView',          deps: [] /* ['slots_core'] */    },
-        { value: '1',  label: 'AQUARIUM',          bundleName: 'aquarium',      mainPrefab: 'prefabs/aquariumView',       deps: [] /* ['slots_core'] */    },
-        { value: '15', label: 'DRAGON_BALL',       bundleName: 'dragonball',    mainPrefab: 'prefabs/dbView',             deps: [] /* ['slots_core'] */    },
-        { value: '3',  label: 'COWBOY',            bundleName: 'cowboy',        mainPrefab: 'prefabs/cbView',             deps: [] /* ['slots_core'] */    },
-        // { value: '17', label: 'GAINHAY',           bundleName: 'gainhay',       mainPrefab: 'prefabs/GainHayView',        deps: [] /* ['slots_core'] */    },
-        // { value: '16', label: 'THUONG_HAI',        bundleName: 'thuonghai',     mainPrefab: 'prefabs/ThuongHaiView',      deps: [] /* ['slots_core'] */    },
-        { value: '7',  label: 'SEVEN77',           bundleName: '777',           mainPrefab: 'prefabs/777View',            deps: [] /* ['slots_core'] */    },
-        { value: '12', label: 'BLOCK_BUSTER',      bundleName: 'tq',            mainPrefab: 'prefabs/tqView',             deps: [] /* ['slots_core'] */    },
-        { value: '2',  label: 'THREE_KINGDOM',     bundleName: 'tk',            mainPrefab: 'prefabs/tkView',             deps: [] /* ['slots_core'] */    },
+        // ── SLOTS (load slots_core trước) ───────────────────────────
+        //  GAINHAY / THUONG_HAI: bundle chưa tồn tại → tạm comment.
+        { value: '4',  label: 'EGYPT',             bundleName: 'egypt',         mainPrefab: 'prefabs/egyptView',          deps: ['slots_core']    },
+        { value: '1',  label: 'AQUARIUM',          bundleName: 'aquarium',      mainPrefab: 'prefabs/aquariumView',       deps: ['slots_core']    },
+        { value: '15', label: 'DRAGON_BALL',       bundleName: 'dragonball',    mainPrefab: 'prefabs/dbView',             deps: ['slots_core']    },
+        { value: '3',  label: 'COWBOY',            bundleName: 'cowboy',        mainPrefab: 'prefabs/cbView',             deps: ['slots_core']    },
+        // { value: '17', label: 'GAINHAY',           bundleName: 'gainhay',       mainPrefab: 'prefabs/GainHayView',        deps: ['slots_core']    },
+        // { value: '16', label: 'THUONG_HAI',        bundleName: 'thuonghai',     mainPrefab: 'prefabs/ThuongHaiView',      deps: ['slots_core']    },
+        { value: '7',  label: 'SEVEN77',           bundleName: '777',           mainPrefab: 'prefabs/777View',            deps: ['slots_core']    },
+        { value: '12', label: 'BLOCK_BUSTER',      bundleName: 'tq',            mainPrefab: 'prefabs/tqView',             deps: ['slots_core']    },
+        { value: '2',  label: 'THREE_KINGDOM',     bundleName: 'tk',            mainPrefab: 'prefabs/tkView',             deps: ['slots_core']    },
 
-        // ── CARD GAMES ──────────────────────────────────────────────
-        //  TODO: khi tạo bundle 'cardgame_core' xong, đổi deps về ['cardgame_core'].
-        { value: '51', label: 'BA_CAY',            bundleName: '3cay',          mainPrefab: 'prefabs/3CLobby',            deps: [] /* ['cardgame_core'] */ },
-        { value: '19', label: 'BACCARAT',          bundleName: 'bacarat',       mainPrefab: 'prefabs/BaCaratView',        deps: [] /* ['cardgame_core'] */ },
-        { value: '55', label: 'MAU_BINH',          bundleName: 'maubinh',       mainPrefab: 'prefabs/MBLobby',            deps: [] /* ['cardgame_core'] */ },
-        { value: '54', label: 'TIEN_LEN_MN',       bundleName: 'tienlenMN',     mainPrefab: 'prefabs/TLMNLobby',          deps: [] /* ['cardgame_core'] */ },
-        { value: '66', label: 'TIEN_LEN_MN_SOLO',  bundleName: 'tienlenMNSoLo', mainPrefab: 'prefabs/TLMNSoLoLobby',      deps: [] /* ['cardgame_core'] */ },
-        { value: '57', label: 'POKER_TEXAS',       bundleName: 'poker',         mainPrefab: 'prefabs/pokerView',          deps: [] /* ['cardgame_core'] */ },
+        // ── CARD GAMES (load cardgame_core trước) ───────────────────
+        { value: '51', label: 'BA_CAY',            bundleName: '3cay',          mainPrefab: 'prefabs/3CLobby',            deps: ['cardgame_core'] },
+        { value: '19', label: 'BACCARAT',          bundleName: 'bacarat',       mainPrefab: 'prefabs/BaCaratView',        deps: ['cardgame_core'] },
+        { value: '55', label: 'MAU_BINH',          bundleName: 'maubinh',       mainPrefab: 'prefabs/MBLobby',            deps: ['cardgame_core'] },
+        { value: '54', label: 'TIEN_LEN_MN',       bundleName: 'tienlenMN',     mainPrefab: 'prefabs/TLMNLobby',          deps: ['cardgame_core'] },
+        { value: '66', label: 'TIEN_LEN_MN_SOLO',  bundleName: 'tienlenMNSoLo', mainPrefab: 'prefabs/TLMNSoLoLobby',      deps: ['cardgame_core'] },
+        { value: '57', label: 'POKER_TEXAS',       bundleName: 'poker',         mainPrefab: 'prefabs/pokerView',          deps: ['cardgame_core'] },
     ];
 
     // ═══════════════════════════════════════════════════════════════
