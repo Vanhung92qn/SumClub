@@ -50,6 +50,10 @@
         // ─────────────────────────────────────────────────────
         //  PUBLIC: Load game bundle theo GameId
         //  callback(err, bundle)
+        //  Log timing (?gamelog=1 hoac ?bootlog=1):
+        //   [GAME] BEGIN <label> bundle=<n> deps=<arr>
+        //   [GAME] DEPS_DONE <label> +Xms
+        //   [GAME] BUNDLE_DONE <label> +Xms (cache=hit/miss)
         // ─────────────────────────────────────────────────────
         BundleLoader.prototype.loadGame = function (gameId, callback) {
             var config = cc.GameBundleConfig.getByGameId(gameId);
@@ -60,15 +64,62 @@
                 return;
             }
 
-            // Nếu game có dependency bundle (vd: slots cần slots_core)
-            if (config.deps && config.deps.length > 0) {
-                this._loadBundlesSequential(config.deps, function (err) {
-                    if (err) { callback && callback(err, null); return; }
-                    this._loadSingleBundle(config.bundleName, callback);
-                }.bind(this));
-            } else {
-                this._loadSingleBundle(config.bundleName, callback);
+            var self = this;
+            var label = config.label;
+            var bundleName = config.bundleName;
+            var deps = config.deps || [];
+            var t0 = Date.now();
+            var logEnabled = self._isGameLogEnabled();
+            var cacheHit = !!cc.assetManager.getBundle(bundleName);
+
+            if (logEnabled) {
+                console.log('[GAME] BEGIN', label, 'bundle=' + bundleName, 'deps=' + JSON.stringify(deps), 'cache=' + (cacheHit ? 'HIT' : 'MISS'));
+                if (typeof window !== 'undefined') {
+                    window.__GAME_LOG__ = window.__GAME_LOG__ || [];
+                    window.__GAME_LOG__.push({ t: 0, tag: 'BEGIN', game: label, bundle: bundleName, deps: deps, cache: cacheHit ? 'HIT' : 'MISS' });
+                }
             }
+
+            var onAllDone = function (err, bundle) {
+                var dt = Date.now() - t0;
+                if (logEnabled) {
+                    console.log('[GAME] BUNDLE_DONE', label, '+' + dt + 'ms', err ? 'ERR' : 'OK');
+                    if (typeof window !== 'undefined') {
+                        window.__GAME_LOG__.push({ t: dt, tag: err ? 'BUNDLE_FAIL' : 'BUNDLE_DONE', game: label, err: err ? String(err).slice(0, 120) : 0 });
+                    }
+                }
+                callback && callback(err, bundle);
+            };
+
+            if (deps.length > 0) {
+                this._loadBundlesSequential(deps, function (err) {
+                    if (err) { onAllDone(err, null); return; }
+                    if (logEnabled) {
+                        var dtDeps = Date.now() - t0;
+                        console.log('[GAME] DEPS_DONE', label, '+' + dtDeps + 'ms');
+                        if (typeof window !== 'undefined') {
+                            window.__GAME_LOG__.push({ t: dtDeps, tag: 'DEPS_DONE', game: label, deps: deps });
+                        }
+                    }
+                    self._loadSingleBundle(bundleName, onAllDone);
+                });
+            } else {
+                this._loadSingleBundle(bundleName, onAllDone);
+            }
+        };
+
+        // Bat log khi co ?gamelog=1, ?bootlog=1, hoac localStorage tuong ung
+        BundleLoader.prototype._isGameLogEnabled = function () {
+            if (typeof window === 'undefined') return false;
+            try {
+                var p = new URLSearchParams(window.location.search);
+                if (p.get('gamelog') === '1' || p.get('bootlog') === '1') return true;
+            } catch (e) {}
+            try {
+                var ls = window.localStorage;
+                if (ls && (ls.getItem('gamelog') === '1' || ls.getItem('bootlog') === '1')) return true;
+            } catch (e) {}
+            return false;
         };
 
         // ─────────────────────────────────────────────────────
