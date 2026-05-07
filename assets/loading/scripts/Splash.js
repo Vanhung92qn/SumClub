@@ -22,19 +22,38 @@ cc.Class({
         this.isLoadConfig = false;
         this._bootT0 = Date.now();
         this._bundleStats = {};
-        this._bootLog('SCENE_ONLOAD', { ua: navigator.userAgent, online: navigator.onLine });
-        this._installNetTap();
+        this._bootLogEnabled = this._isBootLogEnabled();
+        if (this._bootLogEnabled) {
+            this._bootLog('SCENE_ONLOAD', { ua: navigator.userAgent, online: navigator.onLine });
+            this._installNetTap();
+        }
         this.initOneSign();
         // cc.sys.isBrowser ? this.loadAssets() : (this.initHotUpdate(), this.checkUpdate());
         this.loadAssets();
     },
 
     // ═══════════════════════════════════════════════════════════════
-    //  BOOT LOG  (chi co tac dung tu khi onLoad chay → MainGame visible)
-    //  Doc: F12 → Console → filter "[BOOT]"
-    //  Lay tat ca log: copy(window.__BOOT_LOG__)  → paste cho ai can audit
+    //  BOOT LOG (production-quiet)
+    //  - Mac dinh: TAT (production sach console).
+    //  - Bat: them ?bootlog=1 vao URL  →  ...index.html?bootlog=1
+    //         hoac  localStorage.setItem('bootlog', '1')  roi F5.
+    //  - Doc: F12 → Console → filter "[BOOT]"
+    //  - Lay full log: copy(JSON.stringify(window.__BOOT_LOG__, null, 2))
     // ═══════════════════════════════════════════════════════════════
+    _isBootLogEnabled: function () {
+        if (typeof window === 'undefined') return false;
+        try {
+            var p = new URLSearchParams(window.location.search);
+            if (p.get('bootlog') === '1') return true;
+        } catch (e) {}
+        try {
+            if (window.localStorage && window.localStorage.getItem('bootlog') === '1') return true;
+        } catch (e) {}
+        return false;
+    },
+
     _bootLog: function (tag, data) {
+        if (!this._bootLogEnabled) return;
         var t = Date.now() - (this._bootT0 || Date.now());
         var line = { t: t + 'ms', tag: tag };
         if (data) {

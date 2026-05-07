@@ -17,8 +17,11 @@ var netConfig = require('NetConfig');
 
         onLoad: function () {
             this._bootT0 = Date.now();
-            this._installNetTap();
-            this._bootLog('SCENE_ONLOAD', { ua: navigator.userAgent, online: navigator.onLine });
+            this._bootLogEnabled = this._isBootLogEnabled();
+            if (this._bootLogEnabled) {
+                this._installNetTap();
+                this._bootLog('SCENE_ONLOAD', { ua: navigator.userAgent, online: navigator.onLine });
+            }
             // cc.debug.setDisplayStats(true);
             if (cc.sys.isNative) {
                 if (cc.Device) {
@@ -80,11 +83,26 @@ var netConfig = require('NetConfig');
         },
 
         // ═══════════════════════════════════════════════════════════════
-        //  BOOT LOG (LoadingView path)
-        //  F12 → Console → filter "[BOOT]"
-        //  copy(window.__BOOT_LOG__)  → paste cho audit
+        //  BOOT LOG (production-quiet, LoadingView path)
+        //  - Mac dinh: TAT.
+        //  - Bat: ?bootlog=1 hoac localStorage.setItem('bootlog','1')
+        //  - F12 → Console → filter "[BOOT]"
+        //  - copy(JSON.stringify(window.__BOOT_LOG__, null, 2)) → audit
         // ═══════════════════════════════════════════════════════════════
+        _isBootLogEnabled: function () {
+            if (typeof window === 'undefined') return false;
+            try {
+                var p = new URLSearchParams(window.location.search);
+                if (p.get('bootlog') === '1') return true;
+            } catch (e) {}
+            try {
+                if (window.localStorage && window.localStorage.getItem('bootlog') === '1') return true;
+            } catch (e) {}
+            return false;
+        },
+
         _bootLog: function (tag, data) {
+            if (!this._bootLogEnabled) return;
             var t = Date.now() - (this._bootT0 || Date.now());
             var line = { t: t + 'ms', tag: tag, src: 'LV' };
             if (data) for (var k in data) line[k] = data[k];
