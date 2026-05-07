@@ -20,9 +20,72 @@ cc.Class({
     onLoad: function () {
         this.isLoadScene = false;
         this.isLoadConfig = false;
+        this._bootT0 = Date.now();
+        this._bundleStats = {};
+        this._bootLog('SCENE_ONLOAD', { ua: navigator.userAgent, online: navigator.onLine });
+        this._installNetTap();
         this.initOneSign();
         // cc.sys.isBrowser ? this.loadAssets() : (this.initHotUpdate(), this.checkUpdate());
         this.loadAssets();
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    //  BOOT LOG  (chi co tac dung tu khi onLoad chay → MainGame visible)
+    //  Doc: F12 → Console → filter "[BOOT]"
+    //  Lay tat ca log: copy(window.__BOOT_LOG__)  → paste cho ai can audit
+    // ═══════════════════════════════════════════════════════════════
+    _bootLog: function (tag, data) {
+        var t = Date.now() - (this._bootT0 || Date.now());
+        var line = { t: t + 'ms', tag: tag };
+        if (data) {
+            for (var k in data) line[k] = data[k];
+        }
+        if (typeof window !== 'undefined') {
+            window.__BOOT_LOG__ = window.__BOOT_LOG__ || [];
+            window.__BOOT_LOG__.push(line);
+        }
+        console.log('[BOOT]', JSON.stringify(line));
+    },
+
+    // Hook cc.assetManager.downloader.downloadFile de log moi HTTP request
+    _installNetTap: function () {
+        var self = this;
+        if (!cc.assetManager || !cc.assetManager.downloader || self._netTapInstalled) return;
+        self._netTapInstalled = true;
+        var dl = cc.assetManager.downloader;
+        var origDownloadFile = dl.downloadFile;
+        if (typeof origDownloadFile !== 'function') return;
+        dl.downloadFile = function (url, options, onProgress, onComplete) {
+            var t0 = Date.now();
+            var wrapped = function (err, content) {
+                var dt = Date.now() - t0;
+                // chi log url ngan + size
+                var size = 0;
+                if (content) {
+                    if (content.byteLength) size = content.byteLength;
+                    else if (content.length) size = content.length;
+                }
+                self._bootLog('NET', { url: String(url).split('/').slice(-3).join('/'), dt: dt + 'ms', size: size, err: err ? String(err).slice(0, 80) : 0 });
+                if (onComplete) onComplete(err, content);
+            };
+            return origDownloadFile.call(dl, url, options, onProgress, wrapped);
+        };
+        self._bootLog('NET_TAP_INSTALLED');
+    },
+
+    _bundleStat: function (name) {
+        var b = cc.assetManager.getBundle(name);
+        if (!b) return { exists: 0 };
+        var stat = { exists: 1, name: b.name };
+        try {
+            var cfg = b.config || b._config;
+            if (cfg) {
+                var paths = cfg.paths;
+                stat.paths = paths ? Object.keys(paths.map || paths).length : 0;
+                if (cfg.uuids) stat.uuids = cfg.uuids.length || Object.keys(cfg.uuids).length;
+            }
+        } catch (e) {}
+        return stat;
     },
 
     initOneSign: function () {
@@ -54,6 +117,7 @@ cc.Class({
         this.updateProgress(0);
         this.messageLabel.string = "Đang tải dữ liệu...";
         var self = this;
+        self._bootLog('LOAD_ASSETS_START');
         setTimeout(function () {
             self.loadLobbyBundle();
         }, 100);
@@ -68,27 +132,40 @@ cc.Class({
         var bundleNames = ['common', 'prefabs', 'lobby'];
         var loaded = 0;
         var failed = false;
+        var batchT0 = Date.now();
 
         self.messageLabel.string = "Đang tải dữ liệu...";
+        self._bootLog('BUNDLE_BATCH_START', { bundles: bundleNames.join(',') });
 
         bundleNames.forEach(function (name) {
             if (cc.assetManager.getBundle(name)) {
                 loaded++;
+                self._bootLog('BUNDLE_CACHED', { name: name });
                 if (loaded === bundleNames.length && !failed) self.loadScene();
                 return;
             }
+            var t0 = Date.now();
+            self._bootLog('BUNDLE_LOAD_BEGIN', { name: name });
             cc.assetManager.loadBundle(name, function (err) {
                 if (failed) return;
                 if (err) {
                     failed = true;
-                    console.error('[Splash] FAILED to load bundle:', name, err);
+                    self._bootLog('BUNDLE_LOAD_FAIL', { name: name, dt: (Date.now() - t0) + 'ms', err: String(err).slice(0, 120) });
                     self.messageLabel.string = "⚠ Lỗi tải dữ liệu!\nVui lòng thử lại.";
                     if (self.retryButtonNode) self.retryButtonNode.active = true;
                     return;
                 }
                 loaded++;
-                console.log('[Splash] Bundle loaded OK:', name, '(' + loaded + '/' + bundleNames.length + ')');
-                if (loaded === bundleNames.length) self.loadScene();
+                self._bootLog('BUNDLE_LOAD_OK', {
+                    name: name,
+                    dt: (Date.now() - t0) + 'ms',
+                    progress: loaded + '/' + bundleNames.length,
+                    stat: self._bundleStat(name)
+                });
+                if (loaded === bundleNames.length) {
+                    self._bootLog('BUNDLE_BATCH_DONE', { dt: (Date.now() - batchT0) + 'ms' });
+                    self.loadScene();
+                }
             });
         });
     },
@@ -100,23 +177,38 @@ cc.Class({
         var self = this;
         var lobby = cc.assetManager.getBundle('lobby');
         if (!lobby) {
-            console.error('[Splash] lobby bundle missing at loadScene()');
+            self._bootLog('LOAD_SCENE_NO_BUNDLE');
             return;
         }
 
         self.messageLabel.string = "Đang tải màn hình chính...";
+        self._bootLog('PRELOAD_SCENE_BEGIN', { scene: 'MainGame' });
+        var preloadT0 = Date.now();
+        var lastLogged = -1;
 
-        lobby.preloadScene("MainGame", self.onProgress.bind(self), function (err) {
+        lobby.preloadScene("MainGame", function (completed, total) {
+            // log moi 10% de tranh spam
+            var pct = total ? Math.floor((completed / total) * 10) * 10 : 0;
+            if (pct !== lastLogged) {
+                lastLogged = pct;
+                self._bootLog('PRELOAD_PROGRESS', { pct: pct + '%', completed: completed, total: total });
+            }
+            self.onProgress(completed, total);
+        }, function (err) {
             if (err) {
-                console.error('[Splash] preloadScene error:', err);
+                self._bootLog('PRELOAD_FAIL', { err: String(err).slice(0, 120), dt: (Date.now() - preloadT0) + 'ms' });
                 return;
             }
+            self._bootLog('PRELOAD_DONE', { dt: (Date.now() - preloadT0) + 'ms' });
+            var loadT0 = Date.now();
             lobby.loadScene("MainGame", function (err2, scene) {
                 if (err2) {
-                    console.error('[Splash] loadScene error:', err2);
+                    self._bootLog('LOAD_SCENE_FAIL', { err: String(err2).slice(0, 120), dt: (Date.now() - loadT0) + 'ms' });
                     return;
                 }
+                self._bootLog('LOAD_SCENE_DONE', { dt: (Date.now() - loadT0) + 'ms' });
                 cc.director.runScene(scene);
+                self._bootLog('RUN_SCENE_DONE', { totalSinceOnLoad: (Date.now() - self._bootT0) + 'ms' });
             });
         });
     },
