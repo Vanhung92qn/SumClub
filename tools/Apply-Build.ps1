@@ -145,14 +145,17 @@ foreach ($folder in $mainFolders) {
     }
 }
 
-# ─── Step 4: Copy assets/main + assets/internal ve origin ────────────
-# Cocos engine HARDCODE load 2 bundle "main" + "internal" tu relative URL
-# (KHONG di qua BundleControl). 2 bundle nay phai o C:\IIS\Game\assets\.
+# ─── Step 4: Copy core bundles ve origin ────────────────────────────
+# Cocos engine HARDCODE load 3 bundle dac biet tu relative URL
+# (KHONG di qua BundleControl). Phai o C:\IIS\Game\assets\:
+#   - main      : start scene + project script
+#   - internal  : engine internal asset (cc.builtin)
+#   - resources : cho cc.resources.load() API (legacy cc.loader.loadRes)
 # Cac bundle khac (lobby, common, prefabs, taixiu, ...) chi can o CDN.
 Write-Host ""
-Write-Host "[4/4] Copy main + internal bundles -> origin (Cocos hardcoded)..." -ForegroundColor Cyan
+Write-Host "[4/4] Copy core bundles (main, internal, resources) -> origin..." -ForegroundColor Cyan
 
-foreach ($coreBundle in @('main', 'internal')) {
+foreach ($coreBundle in @('main', 'internal', 'resources')) {
     $srcBundle = Join-Path $BuildPath "assets\$coreBundle"
     if (-not (Test-Path $srcBundle)) {
         Write-Host ("      WARNING: KHONG tim thay {0}/" -f $srcBundle) -ForegroundColor Yellow
