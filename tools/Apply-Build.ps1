@@ -145,6 +145,30 @@ foreach ($folder in $mainFolders) {
     }
 }
 
+# ─── Step 4: Copy assets/main + assets/internal ve origin ────────────
+# Cocos engine HARDCODE load 2 bundle "main" + "internal" tu relative URL
+# (KHONG di qua BundleControl). 2 bundle nay phai o C:\IIS\Game\assets\.
+# Cac bundle khac (lobby, common, prefabs, taixiu, ...) chi can o CDN.
+Write-Host ""
+Write-Host "[4/4] Copy main + internal bundles -> origin (Cocos hardcoded)..." -ForegroundColor Cyan
+
+foreach ($coreBundle in @('main', 'internal')) {
+    $srcBundle = Join-Path $BuildPath "assets\$coreBundle"
+    if (-not (Test-Path $srcBundle)) {
+        Write-Host ("      WARNING: KHONG tim thay {0}/" -f $srcBundle) -ForegroundColor Yellow
+        continue
+    }
+    $dstBundle = Join-Path $GamePath "assets\$coreBundle"
+    if ($DryRun) {
+        Write-Host ("      [DRYRUN] mirror: {0} -> {1}" -f $srcBundle, $dstBundle) -ForegroundColor Gray
+    } else {
+        $rcArgs = @("`"$srcBundle`"", "`"$dstBundle`"", '/MIR', '/COPY:DAT', '/R:2', '/W:1', '/MT:4', '/NFL', '/NDL', '/NJH', '/NJS')
+        & robocopy.exe @rcArgs | Out-Null
+        $count = (Get-ChildItem -Path $dstBundle -Recurse -File).Count
+        Write-Host ("      mirrored: assets/{0}/ ({1} files)" -f $coreBundle, $count) -ForegroundColor Green
+    }
+}
+
 # Xoa file *.js cu trong C:\IIS\Game (file co hash khac, build moi co hash khac)
 # Cocos build voi md5Cache=true: main.<hash>.js -> hash thay doi giua build
 if (-not $DryRun) {
