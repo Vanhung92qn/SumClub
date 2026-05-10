@@ -8,6 +8,7 @@
 |---|---|---|
 | `Generate-AssetBundleVersion.ps1` | Quet `build/web-mobile/assets/*` -> tao `AssetBundleVersion.json` | Local (sau khi build) |
 | `Deploy-ToCDN.ps1` | Robocopy `build/web-mobile/assets/*` + JSON -> CDN folder | Local (neu mount) hoac Server |
+| **`Apply-Build.ps1`** | **All-in-one: Generate + Deploy CDN + Copy main package** | **Server** (khuyen dung) |
 | `Optimize-IISAppPools.ps1` | Set IIS app pool AlwaysRunning + idle 0 + preload | Server |
 
 ## Quy trinh deploy DAY DU

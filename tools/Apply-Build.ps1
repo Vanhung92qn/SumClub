@@ -1,0 +1,151 @@
+# ──────────────────────────────────────────────────────────────────
+# Apply-Build.ps1
+# ──────────────────────────────────────────────────────────────────
+# All-in-one script chay TREN SERVER sau khi user upload build folder.
+# Tu dong:
+#   1. Generate AssetBundleVersion.json (neu chua co)
+#   2. Deploy assets + JSON -> C:\IIS\CDN\res
+#   3. Copy main package (index.html + .js + splash + .css) -> C:\IIS\Game
+#
+# CACH DUNG:
+#   1. Tren LOCAL: build trong Cocos Creator -> output C:\SumClub\build\web-mobile
+#   2. Upload folder web-mobile len server (RDP drag, WinSCP, OneDrive, ...)
+#      Vd: C:\Temp\build (chua subfolder assets/, index.html, ...)
+#   3. Tren SERVER:
+#        cd C:\Server\Client\tools
+#        .\Apply-Build.ps1 -BuildPath "C:\Temp\build"
+#
+# OPTIONS:
+#   -BuildPath "C:\Temp\build"    Path folder build da upload (bat buoc)
+#   -CdnPath "C:\IIS\CDN\res"     CDN folder (default)
+#   -GamePath "C:\IIS\Game"       Main package folder (default)
+#   -SkipBackup                    KHONG backup C:\IIS\Game truoc khi deploy
+#   -DryRun                       Xem se lam gi, khong copy
+# ──────────────────────────────────────────────────────────────────
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$BuildPath,
+    [string]$CdnPath = 'C:\IIS\CDN\res',
+    [string]$GamePath = 'C:\IIS\Game',
+    [switch]$SkipBackup,
+    [switch]$DryRun
+)
+
+if (-not (Test-Path $BuildPath)) {
+    Write-Host "ERROR: Khong tim thay $BuildPath" -ForegroundColor Red
+    exit 1
+}
+
+$srcAssets = Join-Path $BuildPath 'assets'
+if (-not (Test-Path $srcAssets)) {
+    Write-Host "ERROR: $srcAssets khong ton tai. Build folder phai co subfolder assets/." -ForegroundColor Red
+    exit 1
+}
+
+$indexHtml = Join-Path $BuildPath 'index.html'
+if (-not (Test-Path $indexHtml)) {
+    Write-Host "ERROR: $indexHtml khong ton tai. Day co phai folder build web-mobile?" -ForegroundColor Red
+    exit 1
+}
+
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+Write-Host ""
+Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "  APPLY-BUILD" -ForegroundColor Cyan
+Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "Build:  $BuildPath" -ForegroundColor White
+Write-Host "CDN:    $CdnPath" -ForegroundColor White
+Write-Host "Main:   $GamePath" -ForegroundColor White
+if ($DryRun) { Write-Host "MODE:   DRY RUN" -ForegroundColor Yellow }
+Write-Host ""
+
+# ─── Step 1: Generate AssetBundleVersion.json ───────────────────────
+$jsonPath = Join-Path $BuildPath 'AssetBundleVersion.json'
+if (-not (Test-Path $jsonPath)) {
+    Write-Host "[1/3] Generate AssetBundleVersion.json..." -ForegroundColor Cyan
+    if ($DryRun) {
+        Write-Host "      [DRYRUN] would run Generate-AssetBundleVersion.ps1" -ForegroundColor Gray
+    } else {
+        & (Join-Path $scriptDir 'Generate-AssetBundleVersion.ps1') -BuildPath $BuildPath
+        if (-not (Test-Path $jsonPath)) {
+            Write-Host "ERROR: Generate failed, JSON khong duoc tao." -ForegroundColor Red
+            exit 1
+        }
+    }
+} else {
+    Write-Host "[1/3] AssetBundleVersion.json da ton tai (skip generate)" -ForegroundColor Green
+}
+
+# ─── Step 2: Deploy assets + JSON -> CDN ────────────────────────────
+Write-Host ""
+Write-Host "[2/3] Deploy assets -> CDN..." -ForegroundColor Cyan
+if ($DryRun) {
+    & (Join-Path $scriptDir 'Deploy-ToCDN.ps1') -BuildPath $BuildPath -CdnPath $CdnPath -DryRun
+} else {
+    & (Join-Path $scriptDir 'Deploy-ToCDN.ps1') -BuildPath $BuildPath -CdnPath $CdnPath
+}
+
+# ─── Step 3: Copy main package -> C:\IIS\Game ───────────────────────
+Write-Host ""
+Write-Host "[3/3] Copy main package -> $GamePath..." -ForegroundColor Cyan
+
+$mainFiles = @(
+    'index.html',
+    'splash.*',
+    'style*.css',
+    '*.js'   # main.*.js + cocos2d-js-min.*.js + physics-min.*.js
+)
+
+# Backup truoc
+if (-not $SkipBackup -and -not $DryRun -and (Test-Path $GamePath)) {
+    $backupDir = Join-Path $GamePath ("backup_" + (Get-Date -Format 'yyyyMMdd_HHmmss'))
+    Write-Host "      Backup -> $backupDir" -ForegroundColor Yellow
+    New-Item -Path $backupDir -ItemType Directory -Force | Out-Null
+    foreach ($pattern in $mainFiles) {
+        Get-ChildItem -Path $GamePath -Filter $pattern -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.DirectoryName -eq $GamePath } |
+            Copy-Item -Destination $backupDir -Force
+    }
+    # web.config khong copy (file rieng cua IIS site)
+}
+
+# Copy
+foreach ($pattern in $mainFiles) {
+    $srcFiles = Get-ChildItem -Path $BuildPath -Filter $pattern -File -ErrorAction SilentlyContinue
+    foreach ($f in $srcFiles) {
+        $destFile = Join-Path $GamePath $f.Name
+        if ($DryRun) {
+            Write-Host ("      [DRYRUN] copy: {0} ({1:N0} bytes)" -f $f.Name, $f.Length) -ForegroundColor Gray
+        } else {
+            Copy-Item -Path $f.FullName -Destination $destFile -Force
+            Write-Host ("      copied: {0} ({1:N0} bytes)" -f $f.Name, $f.Length) -ForegroundColor Green
+        }
+    }
+}
+
+# Xoa file *.js cu trong C:\IIS\Game (file co hash khac, build moi co hash khac)
+# Cocos build voi md5Cache=true: main.<hash>.js -> hash thay doi giua build
+if (-not $DryRun) {
+    $newJsHashes = (Get-ChildItem -Path $BuildPath -Filter "*.js" -File).Name
+    Get-ChildItem -Path $GamePath -Filter "*.js" -File |
+        Where-Object {
+            $_.DirectoryName -eq $GamePath -and
+            $_.Name -notin $newJsHashes -and
+            -not $_.Name.StartsWith('backup_')
+        } |
+        ForEach-Object {
+            Write-Host ("      removed stale: {0}" -f $_.Name) -ForegroundColor Yellow
+            Remove-Item $_.FullName -Force
+        }
+}
+
+Write-Host ""
+Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "  DONE" -ForegroundColor Green
+Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Test:" -ForegroundColor White
+Write-Host "  F5 https://bay789x.me/" -ForegroundColor Gray
+Write-Host "  F12 Network: kiem tra fetch tu res.bay789x.me" -ForegroundColor Gray
