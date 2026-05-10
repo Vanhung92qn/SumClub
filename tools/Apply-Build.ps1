@@ -87,12 +87,18 @@ if ($DryRun) {
     & (Join-Path $scriptDir 'Deploy-ToCDN.ps1') -BuildPath $BuildPath -CdnPath $CdnPath
 }
 
-# Ensure CDN web.config ton tai (CORS + cache headers).
-# Robocopy /MIR khong dung den root web.config, nhung neu user accidentally
-# xoa/move thi response thieu CORS -> client bi block.
+# Ensure CDN web.config ton tai DAY DU (CORS + cache + MIME types).
+# Robocopy /MIR khong dung den root web.config. Neu thieu OR thieu MIME nao
+# (vd .plist), client se 404. Force overwrite de luon co full MIME list.
 $cdnWebConfig = Join-Path $CdnPath 'web.config'
-if (-not $DryRun -and -not (Test-Path $cdnWebConfig)) {
-    Write-Host "      web.config thieu, recreate..." -ForegroundColor Yellow
+$needsRewrite = -not (Test-Path $cdnWebConfig)
+if (-not $needsRewrite) {
+    # Re-write neu thieu MIME .plist (signal config out-of-date)
+    $existingContent = Get-Content $cdnWebConfig -Raw -ErrorAction SilentlyContinue
+    if ($existingContent -notmatch '\.plist') { $needsRewrite = $true }
+}
+if (-not $DryRun -and $needsRewrite) {
+    Write-Host "      web.config thieu/cu, rewrite full MIME list..." -ForegroundColor Yellow
     $cfgContent = @'
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
@@ -102,6 +108,20 @@ if (-not $DryRun -and -not (Test-Path $cdnWebConfig)) {
             <mimeMap fileExtension=".json" mimeType="application/json" />
             <remove fileExtension=".bin" />
             <mimeMap fileExtension=".bin" mimeType="application/octet-stream" />
+            <remove fileExtension=".plist" />
+            <mimeMap fileExtension=".plist" mimeType="application/xml" />
+            <remove fileExtension=".atlas" />
+            <mimeMap fileExtension=".atlas" mimeType="text/plain" />
+            <remove fileExtension=".fnt" />
+            <mimeMap fileExtension=".fnt" mimeType="text/plain" />
+            <remove fileExtension=".ccon" />
+            <mimeMap fileExtension=".ccon" mimeType="application/octet-stream" />
+            <remove fileExtension=".pkm" />
+            <mimeMap fileExtension=".pkm" mimeType="application/octet-stream" />
+            <remove fileExtension=".pvr" />
+            <mimeMap fileExtension=".pvr" mimeType="application/octet-stream" />
+            <remove fileExtension=".webp" />
+            <mimeMap fileExtension=".webp" mimeType="image/webp" />
             <clientCache cacheControlMode="UseMaxAge" cacheControlMaxAge="365.00:00:00" />
         </staticContent>
         <httpProtocol>
