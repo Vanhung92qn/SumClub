@@ -12,7 +12,9 @@
         Md5LuckyDiceNegotiateCommand.prototype.execute = function (controller) {
             var url = 'signalr/negotiate';
 
-            return cc.ServerConnector.getInstance().sendRequest(cc.SubdomainName.TAI_XIU_MD5, url, function (response) {				
+            console.log('[TXMD5-DEBUG] NegotiateCommand.execute: subdomain=', cc.SubdomainName.TAI_XIU_MD5, 'url=', url);
+            return cc.ServerConnector.getInstance().sendRequest(cc.SubdomainName.TAI_XIU_MD5, url, function (response) {
+                console.log('[TXMD5-DEBUG] NegotiateCommand.callback: response received, len=', response && response.length);
                 var obj = JSON.parse(response);
 				//console.log(obj);
                 return controller.onLuckyDiceNegotiateResponse(obj);
