@@ -1,3 +1,20 @@
+// ─────────────────────────────────────────────────────────────────
+//  Auto-detect: chay local (Cocos Creator preview / file://) -> tat CDN
+//  → tranh mismatch hash khi build local chua deploy CDN.
+//  Production (bay789x.me, Cloudflare) -> bat CDN.
+// ─────────────────────────────────────────────────────────────────
+function detectCdnUrl() {
+    if (typeof window === 'undefined' || !window.location) return '';
+    var host = window.location.hostname || '';
+    var isLocal = host === 'localhost'
+        || host === '127.0.0.1'
+        || host === ''
+        || /^192\.168\./.test(host)
+        || /^10\./.test(host)
+        || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host);
+    return isLocal ? '' : 'https://res.bay789x.me/';
+}
+
 module.exports = {
 
     HOST_U: '',
@@ -11,13 +28,11 @@ module.exports = {
     RECONNECT_TIME: 5,
 
     // ─────────────────────────────────────────────────────────────
-    //  ASSET CDN (BundleControl)
-    //  - Rong '': local mode → cc.assetManager.loadBundle(name) relative URL.
-    //  - Set     : CDN mode → fetch AssetBundleVersion.json + cache-bust hash.
-    //
-    //  Co Cloudflare proxy: user vao HTTPS, origin server HTTP port 80 → OK.
-    //  Tat tam thoi → de '' va build/deploy nhu cu.
+    //  ASSET CDN (BundleControl):
+    //  - Local (preview/test):  '' -> fallback relative URL (load tu Creator server).
+    //  - Production:            'https://res.bay789x.me/' -> CDN voi cache-bust hash.
+    //  Auto-detect qua hostname.
     // ─────────────────────────────────────────────────────────────
-    ASSET_CDN_URL: 'https://res.bay789x.me/',
+    ASSET_CDN_URL: detectCdnUrl(),
 
 };
