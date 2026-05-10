@@ -765,7 +765,25 @@ var netConfig = require("NetConfig");
       });
     },
 
+    // Pause/resume polling jackpot lobby. Khi mo game, polling van chay tieu CPU + API
+    // 1.1s/5s → pause de tiet kiem. Khi back ve lobby thi resume.
+    _setLobbyJackpotPaused: function (paused) {
+      try {
+        if (cc.LobbyJackpotController && cc.LobbyJackpotController.getInstance) {
+          var ctrl = cc.LobbyJackpotController.getInstance();
+          if (ctrl && typeof ctrl.pauseUpdateJackpot === 'function') {
+            ctrl.pauseUpdateJackpot(paused);
+          }
+        }
+      } catch (e) {
+        console.warn('[LobbyView] _setLobbyJackpotPaused error:', e);
+      }
+    },
+
     createDynamicView: function (gameId) {
+      // Pause polling jackpot lobby trong khi user dang trong game.
+      this._setLobbyJackpotPaused(true);
+
       // ── Nếu game đã được tách bundle (Phase 2+), dùng BundleLoader ──
       if (cc.GameBundleConfig && cc.GameBundleConfig.hasBundleConfig(gameId)) {
         this._createDynamicViewFromBundle(gameId);
@@ -1996,14 +2014,17 @@ var netConfig = require("NetConfig");
      * KHÔNG thay đổi trạng thái login (guest/user)
      */
     showLobbyAfterMinigame: function () {
+      // Resume polling jackpot lobby (da pause khi vao game).
+      this._setLobbyJackpotPaused(false);
+
       // Hiển thị lại các lobby node
       this.nodeLobbys.forEach(function (nodeLobby) {
         nodeLobby.active = true;
       });
-      
+
       // Hiển thị lại event top
       this.nodeEventTop.active = true;
-      
+
       // Nếu đã login → hiển thị menu tab, ẩn guest UI
       // Nếu chưa login → hiển thị guest UI, ẩn menu tab
       var isLoggedIn = cc.LoginController.getInstance().checkLogin();
@@ -2017,7 +2038,7 @@ var netConfig = require("NetConfig");
 
       // Bật lại nhạc nền
       this.playAudioBg();
-      
+
       // Thông báo cho LobbyController
       cc.LobbyController.getInstance().setLobbyActive(true);
     },
