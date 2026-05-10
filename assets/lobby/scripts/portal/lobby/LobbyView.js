@@ -645,7 +645,11 @@ var netConfig = require("NetConfig");
       return MAP[gameId] || null;
     },
 
-    // Bật loading bar fake-progress cho 1 game (0 → 100% mượt). Idempotent.
+    // Loading bar 2 pha:
+    //  Pha 1 (0 → 80%): tang 0.025/100ms (~3.2s) trong khi bundle + prefab fetch.
+    //  Pha 2 (80% → 95%): crawl 0.005/200ms (~6s) phong khi bundle qua cham, KHONG bao gio
+    //                     reach 100% qua fake tick. 100% chi set khi createView thuc su xong.
+    //  Tranh "lua visual": user thay 100% roi cho 5-10s nua.
     _startGameLoadingBar: function (cfg) {
       if (!cfg) return;
       var pb = cfg.progress ? this[cfg.progress] : null;
@@ -662,14 +666,16 @@ var netConfig = require("NetConfig");
       }
       var p = 0;
       this._loadingTick = function () {
-        if (p < 1) {
-          p += 0.04;
-          if (p > 1) p = 1;
+        if (p < 0.8) {
+          p += 0.025;       // pha 1: smooth len 80%
+        } else if (p < 0.95) {
+          p += 0.005;       // pha 2: crawl 80-95%, chua bao gio het
         }
+        // Khong tang sau 0.95. Cho _stopGameLoadingBar(cfg, true) set 1.0.
         if (pb) pb.progress = p;
         if (lb) lb.string = Math.round(p * 100) + "%";
       };
-      this.schedule(this._loadingTick, 0.05);
+      this.schedule(this._loadingTick, 0.1);
     },
 
     _stopGameLoadingBar: function (cfg, isSuccess) {
@@ -782,7 +788,6 @@ var netConfig = require("NetConfig");
           }
 
           self._gameLog('PREFAB_LOAD_DONE', gameLabel, tPrefab);
-          self._stopGameLoadingBar(cfg, true);
 
           var tInst = Date.now();
           if (cfg.popup) {
@@ -795,7 +800,13 @@ var netConfig = require("NetConfig");
             self.activeNodeLobby(false);
           }
           self._gameLog('CREATE_VIEW_DONE', gameLabel, tInst, { popup: !!cfg.popup });
-          self._gameLog('OPEN_TOTAL', gameLabel, tStart, { popup: !!cfg.popup, name: cfg.name });
+
+          // Doi 1 frame de onLoad/onEnable cua components fire + 1 frame render
+          // → moi set 100% va an loading bar. User thay 100% = thuc su game render xong.
+          setTimeout(function () {
+            self._stopGameLoadingBar(cfg, true);
+            self._gameLog('OPEN_TOTAL', gameLabel, tStart, { popup: !!cfg.popup, name: cfg.name });
+          }, 16);
         });
       });
     },
