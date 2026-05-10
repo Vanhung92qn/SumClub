@@ -1596,6 +1596,11 @@ var netConfig = require("NetConfig");
     },
 
     destroyDynamicView: function (gameId) {
+      // Resume polling jackpot lobby (da pause khi vao game).
+      // Goi o day vi destroyDynamicView fire tu MOI flow exit game,
+      // bao gom branch default (vd XocXoc.backClicked goi voi gameId=null).
+      this._setLobbyJackpotPaused(false);
+
       switch (gameId) {
         case cc.GameId.EVENT_TREASURE:
           if (this.nodeTreasureView) {
