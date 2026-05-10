@@ -167,7 +167,10 @@ cc.Class({
     // ─────────────────────────────────────────────────────
     loadLobbyBundle: function () {
         var self = this;
-        var bundleNames = ['common', 'prefabs', 'lobby'];
+        // 'minigame_ui' (4.5MB) la UI shared cho tat ca minigame (TaiXiu, BauCua,
+        // Sicbo, XocXoc, ...). Prefab game ref asset trong day -> phai load TRUOC
+        // khi load bundle game. Preload o landing 1 lan -> moi game open instant.
+        var bundleNames = ['common', 'prefabs', 'lobby', 'minigame_ui'];
         var loaded = 0;
         var failed = false;
         var batchT0 = Date.now();

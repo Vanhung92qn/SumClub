@@ -204,9 +204,11 @@ var netConfig = require('NetConfig');
             self.lbMessage.node.active = true;
             self.lbMessage.string = 'Đang tải dữ liệu...';
 
-            // ── BƯỚC 1: Load song song common + prefabs + lobby
+            // ── BƯỚC 1: Load song song common + prefabs + lobby + minigame_ui
             //  → Tránh lazy round-trip khi MainGame ref asset trong common/prefabs
-            var bundleNames = ['common', 'prefabs', 'lobby'];
+            //  → minigame_ui (4.5MB) la UI shared cho moi minigame (TaiXiu, BauCua,
+            //    Sicbo, XocXoc, ...), prefab game ref asset trong day, phai load TRUOC.
+            var bundleNames = ['common', 'prefabs', 'lobby', 'minigame_ui'];
             var loaded = 0;
             var failed = false;
             var batchT0 = Date.now();
