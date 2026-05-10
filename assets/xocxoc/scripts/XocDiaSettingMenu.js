@@ -62,12 +62,20 @@ cc.Class({
     },
 
     onDestroy: function () {
-        if (this.animation) {
-            this.animation.off(cc.Animation.EventType.FINISHED, this._onAnimationFinished, this);
-        }
-        if (this.autoCloseOnTouchOutside && cc.Canvas.instance) {
-            cc.Canvas.instance.node.off(cc.Node.EventType.TOUCH_END, this._onCanvasTouch, this);
-        }
+        // Khi exit game, parent node co the destroy TRUOC component nay
+        // -> animation._callbackTable da null -> off() throw "cannot read 'finished' of null".
+        // Wrap try/catch + cc.isValid check de an toan.
+        try {
+            if (this.animation && cc.isValid(this.animation) && cc.isValid(this.animation.node)) {
+                this.animation.off(cc.Animation.EventType.FINISHED, this._onAnimationFinished, this);
+            }
+        } catch (e) {}
+        try {
+            if (this.autoCloseOnTouchOutside && cc.Canvas.instance && cc.isValid(cc.Canvas.instance.node)) {
+                cc.Canvas.instance.node.off(cc.Node.EventType.TOUCH_END, this._onCanvasTouch, this);
+            }
+        } catch (e) {}
+        this.animation = null;
     },
 
     // ─────────────────────────────────────────────────────────────
