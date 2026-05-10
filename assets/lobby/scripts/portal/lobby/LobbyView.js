@@ -692,9 +692,30 @@ var netConfig = require("NetConfig");
       if (lb && lb.node && lb.node.parent) lb.node.parent.active = false;
     },
 
+    // Log timing chi tiet flow mo game (debug "loading 100% nhung chua hien game"):
+    //   [GAME] PREFAB_LOAD_BEGIN <name>          ← bundle.load(prefabPath) bat dau
+    //   [GAME] PREFAB_LOAD_DONE  <name> +Xms     ← prefab da load xong (download + parse asset tree)
+    //   [GAME] INSTANTIATE_DONE  <name> +Xms     ← cc.instantiate xong (CPU spike o day)
+    //   [GAME] ADDCHILD_DONE     <name> +Xms     ← addChild + onLoad components fire
+    //   [GAME] OPEN_TOTAL        <name> +Xms     ← tong tu click toi user thay game
+    _gameLog: function (tag, name, t0, extra) {
+      var dt = Date.now() - t0;
+      var line = { tag: tag, game: name, dt: dt + 'ms' };
+      if (extra) for (var k in extra) line[k] = extra[k];
+      try {
+        if (typeof window !== 'undefined') {
+          window.__GAME_LOG__ = window.__GAME_LOG__ || [];
+          window.__GAME_LOG__.push(line);
+        }
+      } catch (e) {}
+      console.log('[GAME]', tag, name, '+' + dt + 'ms', extra ? JSON.stringify(extra) : '');
+    },
+
     _createDynamicViewFromBundle: function (gameId) {
       var self = this;
       var cfg = this._getGameLoadCfg(gameId);
+      var gameLabel = (cc.GameBundleConfig.getByGameId(gameId) || {}).label || ('GAME_' + gameId);
+      var tStart = Date.now();
 
       // Game không có config → fallback generic full-screen + busy spinner.
       if (!cfg) {
@@ -709,17 +730,24 @@ var netConfig = require("NetConfig");
             return;
           }
           var prefabPath = cc.GameBundleConfig.getMainPrefab(gameId);
+          self._gameLog('PREFAB_LOAD_BEGIN', gameLabel, tStart, { path: prefabPath });
+          var tPrefab = Date.now();
           bundle.load(prefabPath, cc.Prefab, function (err2, prefab) {
             self.isLoading = false;
             cc.PopupController.getInstance().hideBusy();
             if (err2) {
+              self._gameLog('PREFAB_LOAD_FAIL', gameLabel, tPrefab, { err: String(err2).slice(0, 100) });
               console.error('[LobbyView] Load prefab thất bại:', prefabPath, err2);
               cc.PopupController.getInstance().showMessageError('Không thể mở game!');
               return;
             }
+            self._gameLog('PREFAB_LOAD_DONE', gameLabel, tPrefab);
             cc.RoomController.getInstance().setGameId(gameId);
+            var tInst = Date.now();
             self.nodeSlotsView = self.createView(prefab);
+            self._gameLog('CREATE_VIEW_DONE', gameLabel, tInst);
             self.activeNodeLobby(false);
+            self._gameLog('OPEN_TOTAL', gameLabel, tStart, { fallback: true });
           });
         });
         return;
@@ -740,18 +768,23 @@ var netConfig = require("NetConfig");
         }
 
         var prefabPath = cc.GameBundleConfig.getMainPrefab(gameId);
+        self._gameLog('PREFAB_LOAD_BEGIN', gameLabel, tStart, { path: prefabPath });
+        var tPrefab = Date.now();
         bundle.load(prefabPath, cc.Prefab, function (err2, prefab) {
           self.isLoading = false;
 
           if (err2) {
             self._stopGameLoadingBar(cfg, false);
+            self._gameLog('PREFAB_LOAD_FAIL', gameLabel, tPrefab, { err: String(err2).slice(0, 100) });
             console.error('[LobbyView] Load prefab ' + cfg.name + ' thất bại:', prefabPath, err2);
             cc.PopupController.getInstance().showMessageError('Không thể mở game ' + cfg.name + '!');
             return;
           }
 
+          self._gameLog('PREFAB_LOAD_DONE', gameLabel, tPrefab);
           self._stopGameLoadingBar(cfg, true);
 
+          var tInst = Date.now();
           if (cfg.popup) {
             // Minigame popup: spawn lên miniGameLayer (fallback createView nếu chưa assign).
             self[cfg.node] = self.createMiniGameView(prefab);
@@ -761,6 +794,8 @@ var netConfig = require("NetConfig");
             self[cfg.node] = self.createView(prefab);
             self.activeNodeLobby(false);
           }
+          self._gameLog('CREATE_VIEW_DONE', gameLabel, tInst, { popup: !!cfg.popup });
+          self._gameLog('OPEN_TOTAL', gameLabel, tStart, { popup: !!cfg.popup, name: cfg.name });
         });
       });
     },
