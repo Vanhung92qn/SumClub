@@ -94,8 +94,12 @@ Write-Host "[3/3] Copy main package -> $GamePath..." -ForegroundColor Cyan
 $mainFiles = @(
     'index.html',
     'splash.*',
+    'favicon.*',
     'style*.css',
     '*.js'   # main.*.js + cocos2d-js-min.*.js + physics-min.*.js
+)
+$mainFolders = @(
+    'src'    # src/settings.<hash>.js + src/assets/<bundle>/scripts/.../plugin.js
 )
 
 # Backup truoc
@@ -111,7 +115,7 @@ if (-not $SkipBackup -and -not $DryRun -and (Test-Path $GamePath)) {
     # web.config khong copy (file rieng cua IIS site)
 }
 
-# Copy
+# Copy file root level
 foreach ($pattern in $mainFiles) {
     $srcFiles = Get-ChildItem -Path $BuildPath -Filter $pattern -File -ErrorAction SilentlyContinue
     foreach ($f in $srcFiles) {
@@ -122,6 +126,22 @@ foreach ($pattern in $mainFiles) {
             Copy-Item -Path $f.FullName -Destination $destFile -Force
             Write-Host ("      copied: {0} ({1:N0} bytes)" -f $f.Name, $f.Length) -ForegroundColor Green
         }
+    }
+}
+
+# Copy folder (vd src/ chua settings.<hash>.js + plugin script)
+# Robocopy mirror: xoa file cu khong co trong build, copy file moi.
+foreach ($folder in $mainFolders) {
+    $srcFolder = Join-Path $BuildPath $folder
+    if (-not (Test-Path $srcFolder)) { continue }
+    $dstFolder = Join-Path $GamePath $folder
+    if ($DryRun) {
+        Write-Host ("      [DRYRUN] mirror folder: {0} -> {1}" -f $srcFolder, $dstFolder) -ForegroundColor Gray
+    } else {
+        $rcArgs = @("`"$srcFolder`"", "`"$dstFolder`"", '/MIR', '/COPY:DAT', '/R:2', '/W:1', '/MT:4', '/NFL', '/NDL', '/NJH', '/NJS')
+        & robocopy.exe @rcArgs | Out-Null
+        $count = (Get-ChildItem -Path $dstFolder -Recurse -File).Count
+        Write-Host ("      mirrored folder: {0}/ ({1} files)" -f $folder, $count) -ForegroundColor Green
     }
 }
 
