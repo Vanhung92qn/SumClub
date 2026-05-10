@@ -87,6 +87,39 @@ if ($DryRun) {
     & (Join-Path $scriptDir 'Deploy-ToCDN.ps1') -BuildPath $BuildPath -CdnPath $CdnPath
 }
 
+# Ensure CDN web.config ton tai (CORS + cache headers).
+# Robocopy /MIR khong dung den root web.config, nhung neu user accidentally
+# xoa/move thi response thieu CORS -> client bi block.
+$cdnWebConfig = Join-Path $CdnPath 'web.config'
+if (-not $DryRun -and -not (Test-Path $cdnWebConfig)) {
+    Write-Host "      web.config thieu, recreate..." -ForegroundColor Yellow
+    $cfgContent = @'
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <system.webServer>
+        <staticContent>
+            <remove fileExtension=".json" />
+            <mimeMap fileExtension=".json" mimeType="application/json" />
+            <remove fileExtension=".bin" />
+            <mimeMap fileExtension=".bin" mimeType="application/octet-stream" />
+            <clientCache cacheControlMode="UseMaxAge" cacheControlMaxAge="365.00:00:00" />
+        </staticContent>
+        <httpProtocol>
+            <customHeaders>
+                <add name="Access-Control-Allow-Origin" value="*" />
+                <add name="Access-Control-Allow-Methods" value="GET, OPTIONS" />
+                <add name="Access-Control-Allow-Headers" value="Content-Type, X-Requested-With" />
+                <add name="Access-Control-Max-Age" value="86400" />
+            </customHeaders>
+        </httpProtocol>
+        <directoryBrowse enabled="false" />
+    </system.webServer>
+</configuration>
+'@
+    [System.IO.File]::WriteAllText($cdnWebConfig, $cfgContent, [System.Text.UTF8Encoding]::new($false))
+    Write-Host "      web.config OK" -ForegroundColor Green
+}
+
 # ─── Step 3: Copy main package -> C:\IIS\Game ───────────────────────
 Write-Host ""
 Write-Host "[3/3] Copy main package -> $GamePath..." -ForegroundColor Cyan
