@@ -313,7 +313,12 @@
             console.log('[BundleLoader] Loading bundle: ' + bundleName + '...');
             cc.PopupController.getInstance().showBusy();
 
-            cc.assetManager.loadBundle(bundleName, function (err, bundle) {
+            // Dung BundleControl: support CDN remote bundle voi cache-bust hash
+            // (fallback cc.assetManager.loadBundle khi ASSET_CDN_URL rong).
+            var loader = (cc.BundleControl && cc.BundleControl.getInstance)
+                ? cc.BundleControl.getInstance()
+                : { loadBundle: function (n, cb) { cc.assetManager.loadBundle(n, cb); } };
+            loader.loadBundle(bundleName, function (err, bundle) {
                 cc.PopupController.getInstance().hideBusy();
 
                 if (err) {

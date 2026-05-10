@@ -222,7 +222,8 @@ var netConfig = require('NetConfig');
                 }
                 var t0 = Date.now();
                 self._bootLog('BUNDLE_LOAD_BEGIN', { name: name });
-                cc.assetManager.loadBundle(name, function (err) {
+                // Dung BundleControl de support CDN remote bundle (kem cache-bust hash).
+                cc.BundleControl.getInstance().loadBundle(name, function (err) {
                     if (failed) return;
                     if (err) {
                         failed = true;
