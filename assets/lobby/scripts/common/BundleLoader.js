@@ -50,10 +50,11 @@
         // ─────────────────────────────────────────────────────
         //  PUBLIC: Load game bundle theo GameId
         //  callback(err, bundle)
-        //  Log timing (?gamelog=1 hoac ?bootlog=1):
-        //   [GAME] BEGIN <label> bundle=<n> deps=<arr>
+        //  Log timing (mac dinh BAT, opt-out: ?gamelog=0):
+        //   [GAME] BEGIN <label> bundle=<n> deps=<arr> cache=HIT|MISS
         //   [GAME] DEPS_DONE <label> +Xms
-        //   [GAME] BUNDLE_DONE <label> +Xms (cache=hit/miss)
+        //   [GAME] BUNDLE_DONE <label> +Xms (OK|ERR)
+        //   Lay full log: copy(JSON.stringify(window.__GAME_LOG__, null, 2))
         // ─────────────────────────────────────────────────────
         BundleLoader.prototype.loadGame = function (gameId, callback) {
             var config = cc.GameBundleConfig.getByGameId(gameId);
@@ -108,18 +109,18 @@
             }
         };
 
-        // Bat log khi co ?gamelog=1, ?bootlog=1, hoac localStorage tuong ung
+        // Mac dinh BAT log. Opt-out: ?gamelog=0 hoac localStorage 'gamelog' = '0'.
         BundleLoader.prototype._isGameLogEnabled = function () {
             if (typeof window === 'undefined') return false;
             try {
                 var p = new URLSearchParams(window.location.search);
-                if (p.get('gamelog') === '1' || p.get('bootlog') === '1') return true;
+                if (p.get('gamelog') === '0') return false;
             } catch (e) {}
             try {
                 var ls = window.localStorage;
-                if (ls && (ls.getItem('gamelog') === '1' || ls.getItem('bootlog') === '1')) return true;
+                if (ls && ls.getItem('gamelog') === '0') return false;
             } catch (e) {}
-            return false;
+            return true;
         };
 
         // ─────────────────────────────────────────────────────
