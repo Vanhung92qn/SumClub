@@ -84,24 +84,27 @@
 			this.nodeBtnHideMaxBet.active = false;
         },
 
+        // Destroy popup voi cc.isValid check.
+        // Truthy ref khong du - sau khi parent destroy con, ref van con nhung node da chet.
+        // Goi destroy() lan 2 -> "object already destroyed" warning.
         destroyHelpView: function () {
-            if (this.helpView)
-                this.helpView.destroy();
+            if (this.helpView && cc.isValid(this.helpView)) this.helpView.destroy();
+            this.helpView = null;
         },
-		
+
         destroyTopView: function () {
-            if (this.topView)
-                this.topView.destroy();
+            if (this.topView && cc.isValid(this.topView)) this.topView.destroy();
+            this.topView = null;
         },
 
         destroyHistoryView: function () {
-            if (this.historyView)
-                this.historyView.destroy();
+            if (this.historyView && cc.isValid(this.historyView)) this.historyView.destroy();
+            this.historyView = null;
         },
 
         destroyGraphView: function () {
-            if (this.soiCauView)
-                this.soiCauView.destroy();
+            if (this.soiCauView && cc.isValid(this.soiCauView)) this.soiCauView.destroy();
+            this.soiCauView = null;
         }
     })
 }).call();
