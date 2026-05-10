@@ -20,8 +20,10 @@
         },
 
         destroyGraphView: function () {
-            if (this.nodeGraphView)
+            if (this.nodeGraphView && cc.isValid(this.nodeGraphView)) {
                 this.nodeGraphView.destroy();
+            }
+            this.nodeGraphView = null;
         },
         createJackpotHistoryView: function () {
             this.jackpotHistoryView = this.createView(this.prefabJackpotHistory);
@@ -30,8 +32,10 @@
             this.jackpotHistoryView = this.createView(this.prefabJackpotHistory);
         },
         destroyJackpotHistoryView: function () {
-            if (this.jackpotHistoryView)
+            if (this.jackpotHistoryView && cc.isValid(this.jackpotHistoryView)) {
                 this.jackpotHistoryView.destroy();
+            }
+            this.jackpotHistoryView = null;
         },
     });
 }).call(this);

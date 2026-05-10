@@ -35,15 +35,19 @@
             this.nodeprefabGraphView = this.createView(this.prefabGraph);
         },
         destroyGraphView: function () {
-            if (this.nodeprefabGraphView)
+            if (this.nodeprefabGraphView && cc.isValid(this.nodeprefabGraphView)) {
                 this.nodeprefabGraphView.destroy();
+            }
+            this.nodeprefabGraphView = null;
         },
         createGroupUserView: function () {
             this.nodeGroupUser = this.createView(this.prefabGroupUser);
         },
         destroyGroupUserView: function () {
-            if (this.nodeGroupUser)
+            if (this.nodeGroupUser && cc.isValid(this.nodeGroupUser)) {
                 this.nodeGroupUser.destroy();
+            }
+            this.nodeGroupUser = null;
         },
 
     });
