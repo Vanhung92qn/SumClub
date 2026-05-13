@@ -38,19 +38,19 @@
 
             // ── TWEEN CONFIG (chinh trong Editor) ────────────────────
             revealZoomScale: {
-                default: 1.8,
+                default: 1.6,
                 type: cc.Float,
-                tooltip: 'Scale Parent_BatDia khi zoom-in (1.8 = 180%, kha to)'
+                tooltip: 'Scale Parent_BatDia khi zoom-in (1.6 = 160%, kha to)'
             },
             revealZoomInDuration: {
                 default: 1.2,
                 type: cc.Float,
-                tooltip: 'Time zoom-in + di chuyen ve giua (giay) - tu tu'
+                tooltip: 'Time zoom-in + di chuyen ve giua (giay)'
             },
             revealZoomOutDuration: {
-                default: 1.2,
+                default: 1.5,
                 type: cc.Float,
-                tooltip: 'Time zoom-out + ve vi tri goc (giay) - tu tu'
+                tooltip: 'Time zoom-out + ve vi tri goc (giay) - cham hon zoom-in cho ngot'
             },
             revealMoveToX: {
                 default: 0,
