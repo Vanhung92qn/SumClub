@@ -47,10 +47,20 @@
                 type: cc.Float,
                 tooltip: 'Time zoom-in / zoom-out (giay)'
             },
+            revealMoveToX: {
+                default: 0,
+                type: cc.Float,
+                tooltip: 'X dich chuyen cum BatDia toi (0 = giua man hinh). Tween song song voi zoom.'
+            },
+            revealMoveToY: {
+                default: 0,
+                type: cc.Float,
+                tooltip: 'Y dich chuyen cum BatDia toi (0 = giua man hinh).'
+            },
             revealSlideX: {
                 default: 350,
                 type: cc.Float,
-                tooltip: 'Bat truot sang phai bao nhieu pixel'
+                tooltip: 'Bat truot sang phai bao nhieu pixel khi mo'
             },
             revealDuration: {
                 default: 0.4,
@@ -94,6 +104,12 @@
             if (this.nodeBat) {
                 this._batStartX = this.nodeBat.x;
                 this._batStartY = this.nodeBat.y;
+            }
+            // Cache vi tri goc cua Parent_BatDia (tween reveal di chuyen ve giua,
+            // khi xong tween ve lai vi tri nay).
+            if (this.nodeParentBatDia) {
+                this._parentStartX = this.nodeParentBatDia.x;
+                this._parentStartY = this.nodeParentBatDia.y;
             }
         },
 
@@ -154,7 +170,7 @@
             this._resetBatSprite();
             if (this.nodeBat) this.nodeBat.active = false;
             if (this.nodeDia) this.nodeDia.active = false;
-            if (this.nodeParentBatDia) this.nodeParentBatDia.scale = 1;
+            this._resetParentTransform();
 
             // Skeleton hien thi, khong play anim (none = idle waiting)
             this.animationBat.node.active = true;
@@ -180,12 +196,13 @@
             this._resetBatSprite();
             if (this.nodeBat) this.nodeBat.active = false;
             if (this.nodeDia) this.nodeDia.active = false;
-            if (this.nodeParentBatDia) this.nodeParentBatDia.scale = 1;
+            this._resetParentTransform();
 
             this.animationBat.node.active = true;
             this.animationBat.clearTracks();
             this.animationBat.setToSetupPose();
-            this.animationBat.setAnimation(0, 'XocXoc', false);
+            // Spine moi: anim ten 'shake' (cu la 'XocXoc')
+            this.animationBat.setAnimation(0, 'shake', false);
         },
 
         // ─────────────────────────────────────────────────────────────
@@ -201,8 +218,8 @@
             this.animationBat.node.active = false;
             this.animationBat.clearTracks();
 
-            // Setup parent + dia + bat
-            if (this.nodeParentBatDia) this.nodeParentBatDia.scale = 1;
+            // Setup parent + dia + bat (ve vi tri goc, scale 1)
+            this._resetParentTransform();
             this.nodeDia.active = true;
             this._resetBatSprite();
             this.nodeBat.active = true;
@@ -234,7 +251,15 @@
             this.nodeDia.active = true;
             this.nodeViParent.active = true;
             this.animationBat.node.active = false;
-            if (this.nodeParentBatDia) this.nodeParentBatDia.scale = 1;
+            this._resetParentTransform();
+        },
+
+        _resetParentTransform: function () {
+            if (!this.nodeParentBatDia) return;
+            this.nodeParentBatDia.stopAllActions();
+            this.nodeParentBatDia.scale = 1;
+            this.nodeParentBatDia.x = this._parentStartX || 0;
+            this.nodeParentBatDia.y = this._parentStartY || 0;
         },
 
         // ─────────────────────────────────────────────────────────────
@@ -248,21 +273,31 @@
             var bat = this.nodeBat;
             if (!parent || !bat) return;
 
-            // Reset
+            // Reset cum ve vi tri goc
             parent.scale = 1;
+            parent.x = this._parentStartX;
+            parent.y = this._parentStartY;
             this._resetBatSprite();
             bat.active = true;
 
-            var t1 = this.revealZoomDuration;   // zoom-in
+            var t1 = this.revealZoomDuration;   // zoom-in + move to center
             var t2 = this.revealDuration;        // slide bat
             var t3 = this.revealDwellTime;       // dwell
-            var t4 = this.revealZoomDuration;   // zoom-out
+            var t4 = this.revealZoomDuration;   // zoom-out + move back
 
-            // (a) Zoom-in parent -> dwell -> zoom-out parent
+            // (a) Zoom-in + move to center -> dwell -> zoom-out + move back
             cc.tween(parent)
-                .to(t1, { scale: this.revealZoomScale }, { easing: 'sineOut' })
+                .to(t1, {
+                    scale: this.revealZoomScale,
+                    x: this.revealMoveToX,
+                    y: this.revealMoveToY
+                }, { easing: 'sineOut' })
                 .delay(t2 + t3)
-                .to(t4, { scale: 1 }, { easing: 'sineInOut' })
+                .to(t4, {
+                    scale: 1,
+                    x: this._parentStartX,
+                    y: this._parentStartY
+                }, { easing: 'sineInOut' })
                 .start();
 
             // (b) Sau zoom-in: bat truot sang ngang + fade
