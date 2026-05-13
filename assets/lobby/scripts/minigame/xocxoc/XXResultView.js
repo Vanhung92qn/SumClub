@@ -11,6 +11,15 @@
             // ── SKELETON (chi anim XocXoc khi shake) ─────────────────
             animationBat: sp.Skeleton,
 
+            // ── DEALER SPINE ─────────────────────────────────────────
+            //  - state BETTING:  play 'bet' (vay chip/keu cuoc)
+            //  - cac state khac: play 'idle' (dung yen, xem)
+            animationDealer: {
+                default: null,
+                type: sp.Skeleton,
+                tooltip: 'Spine dealer 2 anim: bet (BETTING) + idle (khac). De trong neu khong co dealer.'
+            },
+
             // ── SPRITE REVEAL (Parent_BatDia hierarchy) ──────────────
             nodeParentBatDia: {
                 default: null,
@@ -136,32 +145,39 @@
 
             switch (state) {
                 case cc.XXState.BETTING:        // 54 - cho dat cuoc
+                    if (this.currentState !== state) {
+                        this._showIdle();
+                        this._playDealerAnim('bet');
+                    }
+                    break;
+
                 case cc.XXState.WAITING:        // cho phien moi
                     if (this.currentState !== state) {
                         this._showIdle();
-                        // WAITING chua co XXController.initGateChip, BETTING khong
-                        if (state === cc.XXState.WAITING) {
-                            cc.XXController.getInstance().initGateChip();
-                            this.nodeFxResult.active = false;
-                        }
+                        this._playDealerAnim('idle');
+                        cc.XXController.getInstance().initGateChip();
+                        this.nodeFxResult.active = false;
                     }
                     break;
 
                 case cc.XXState.SHAKING:        // dang xoc bat
                     if (this.currentState !== state) {
                         this._showShaking();
+                        this._playDealerAnim('idle');
                     }
                     break;
 
                 case cc.XXState.OPEN_PLATE:     // mo bat
                     if (this.currentState !== state) {
                         this._showOpenPlate(result, originResult, openNow);
+                        this._playDealerAnim('idle');
                     }
                     break;
 
                 case cc.XXState.SHOW_RESULT:    // 15 - hien ket qua + tra chip
                     if (this.currentState !== state) {
                         this._showResult();
+                        this._playDealerAnim('idle');
                         this.playPayFx(players, result);
                     }
                     break;
@@ -263,6 +279,21 @@
             this.nodeDia.active = true;
             this.nodeViParent.active = true;
             this.animationBat.node.active = false;
+        },
+
+        // Play dealer anim ('bet' khi BETTING, 'idle' cac state khac).
+        // Tu cache clip dang play -> tranh restart anim moi state transition.
+        _playDealerAnim: function (clipName) {
+            if (!this.animationDealer) return;
+            if (this._dealerCurrentClip === clipName) return;
+            this._dealerCurrentClip = clipName;
+            try {
+                this.animationDealer.clearTracks();
+                this.animationDealer.setToSetupPose();
+                this.animationDealer.setAnimation(0, clipName, true);  // loop
+            } catch (e) {
+                cc.warn('[XXResultView] Dealer anim "' + clipName + '" khong ton tai trong spine.');
+            }
         },
 
         _resetParentTransform: function () {
