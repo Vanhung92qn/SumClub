@@ -255,12 +255,14 @@
         //  STATE: show result (hien fx blink + pay chip)
         // ─────────────────────────────────────────────────────────────
         _showResult: function () {
-            // Bat da slide xong, an di. Dia + 4 vi van hien.
+            // State SHOW_RESULT co the den GIUA luc tween zoom-out cua _playRevealSequence
+            // dang chay. KHONG goi _resetParentTransform() o day (no se stopAllActions()
+            // -> kill tween zoom-out -> snap ve vi tri goc, mat smoothness).
+            // De tween tu hoan thanh, parent se ve vi tri goc tu nhien.
             if (this.nodeBat) this.nodeBat.active = false;
             this.nodeDia.active = true;
             this.nodeViParent.active = true;
             this.animationBat.node.active = false;
-            this._resetParentTransform();
         },
 
         _resetParentTransform: function () {
