@@ -38,19 +38,24 @@
 
             // ── TWEEN CONFIG (chinh trong Editor) ────────────────────
             revealZoomScale: {
-                default: 1.5,
+                default: 1.8,
                 type: cc.Float,
-                tooltip: 'Scale Parent_BatDia khi zoom-in (1.5 = 150%)'
+                tooltip: 'Scale Parent_BatDia khi zoom-in (1.8 = 180%, kha to)'
             },
-            revealZoomDuration: {
-                default: 0.3,
+            revealZoomInDuration: {
+                default: 1.2,
                 type: cc.Float,
-                tooltip: 'Time zoom-in / zoom-out (giay)'
+                tooltip: 'Time zoom-in + di chuyen ve giua (giay) - tu tu'
+            },
+            revealZoomOutDuration: {
+                default: 1.2,
+                type: cc.Float,
+                tooltip: 'Time zoom-out + ve vi tri goc (giay) - tu tu'
             },
             revealMoveToX: {
                 default: 0,
                 type: cc.Float,
-                tooltip: 'X dich chuyen cum BatDia toi (0 = giua man hinh). Tween song song voi zoom.'
+                tooltip: 'X dich chuyen cum BatDia toi (0 = giua man hinh).'
             },
             revealMoveToY: {
                 default: 0,
@@ -58,17 +63,17 @@
                 tooltip: 'Y dich chuyen cum BatDia toi (0 = giua man hinh).'
             },
             revealSlideX: {
-                default: 350,
+                default: 400,
                 type: cc.Float,
                 tooltip: 'Bat truot sang phai bao nhieu pixel khi mo'
             },
             revealDuration: {
-                default: 0.4,
+                default: 1.0,
                 type: cc.Float,
-                tooltip: 'Time slide bat (giay)'
+                tooltip: 'Time slide bat - cham rai (giay)'
             },
             revealDwellTime: {
-                default: 1.5,
+                default: 2.0,
                 type: cc.Float,
                 tooltip: 'Time dwell sau khi mo bat (xem ket qua) (giay)'
             },
@@ -285,10 +290,10 @@
             this._resetBatSprite();
             bat.active = true;
 
-            var t1 = this.revealZoomDuration;   // zoom-in + move to center
-            var t2 = this.revealDuration;        // slide bat
-            var t3 = this.revealDwellTime;       // dwell
-            var t4 = this.revealZoomDuration;   // zoom-out + move back
+            var t1 = this.revealZoomInDuration;     // zoom-in + move to center (1.2s)
+            var t2 = this.revealDuration;            // slide bat (1.0s)
+            var t3 = this.revealDwellTime;           // dwell (2.0s)
+            var t4 = this.revealZoomOutDuration;    // zoom-out + move back (1.2s)
 
             console.log('[XXResultView] reveal: from (' + this._parentStartX + ',' + this._parentStartY +
                 ') -> (' + this.revealMoveToX + ',' + this.revealMoveToY +
@@ -296,12 +301,12 @@
                 ', t1=' + t1 + 's t2=' + t2 + 's t3=' + t3 + 's t4=' + t4 + 's');
 
             // (a) Zoom-in + move to center -> dwell -> zoom-out + move back
-            //     Dung cc.v2() cho position de cc.tween parse chac chan dung 2D.
+            //     Easing sineInOut cho ca 2 huong = chuyen dong muot, cham rai 2 dau.
             cc.tween(parent)
                 .to(t1, {
                     scale: this.revealZoomScale,
                     position: cc.v2(this.revealMoveToX, this.revealMoveToY)
-                }, { easing: 'sineOut' })
+                }, { easing: 'sineInOut' })
                 .delay(t2 + t3)
                 .to(t4, {
                     scale: 1,
