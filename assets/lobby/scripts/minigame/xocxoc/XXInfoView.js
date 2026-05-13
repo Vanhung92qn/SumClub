@@ -426,7 +426,8 @@ if (this.lbTimer) {
                         this.updateSessionId(info.SessionID);
                         cc.XXController.getInstance().setSID(info.SessionID);
 
-                        this.progressTimer.node.parent.active = true;
+                        // ProgressBar chi hien o state BETTING (dat cuoc), an o SHOW_RESULT
+                        this.progressTimer.node.parent.active = false;
                         // this.startTimer(time);
                         this.lbTimer.node.color = cc.Color.WHITE;
                         this.lbInfo.string = 'Kết quả';
