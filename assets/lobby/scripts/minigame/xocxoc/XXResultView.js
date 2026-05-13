@@ -38,9 +38,9 @@
 
             // ── TWEEN CONFIG (chinh trong Editor) ────────────────────
             revealZoomScale: {
-                default: 1.2,
+                default: 1.5,
                 type: cc.Float,
-                tooltip: 'Scale Parent_BatDia khi zoom-in'
+                tooltip: 'Scale Parent_BatDia khi zoom-in (1.5 = 150%)'
             },
             revealZoomDuration: {
                 default: 0.3,
@@ -111,6 +111,10 @@
                 this._parentStartX = this.nodeParentBatDia.x;
                 this._parentStartY = this.nodeParentBatDia.y;
             }
+
+            // Defensive: prefab cu chua co revealMoveToX/Y -> Cocos co the load undefined.
+            if (this.revealMoveToX == null) this.revealMoveToX = 0;
+            if (this.revealMoveToY == null) this.revealMoveToY = 0;
         },
 
         reset: function () {
@@ -258,8 +262,9 @@
             if (!this.nodeParentBatDia) return;
             this.nodeParentBatDia.stopAllActions();
             this.nodeParentBatDia.scale = 1;
-            this.nodeParentBatDia.x = this._parentStartX || 0;
-            this.nodeParentBatDia.y = this._parentStartY || 0;
+            var sx = (this._parentStartX != null) ? this._parentStartX : 0;
+            var sy = (this._parentStartY != null) ? this._parentStartY : 0;
+            this.nodeParentBatDia.setPosition(sx, sy);
         },
 
         // ─────────────────────────────────────────────────────────────
@@ -274,9 +279,9 @@
             if (!parent || !bat) return;
 
             // Reset cum ve vi tri goc
+            parent.stopAllActions();
             parent.scale = 1;
-            parent.x = this._parentStartX;
-            parent.y = this._parentStartY;
+            parent.setPosition(this._parentStartX, this._parentStartY);
             this._resetBatSprite();
             bat.active = true;
 
@@ -285,18 +290,22 @@
             var t3 = this.revealDwellTime;       // dwell
             var t4 = this.revealZoomDuration;   // zoom-out + move back
 
+            console.log('[XXResultView] reveal: from (' + this._parentStartX + ',' + this._parentStartY +
+                ') -> (' + this.revealMoveToX + ',' + this.revealMoveToY +
+                '), scale 1 -> ' + this.revealZoomScale +
+                ', t1=' + t1 + 's t2=' + t2 + 's t3=' + t3 + 's t4=' + t4 + 's');
+
             // (a) Zoom-in + move to center -> dwell -> zoom-out + move back
+            //     Dung cc.v2() cho position de cc.tween parse chac chan dung 2D.
             cc.tween(parent)
                 .to(t1, {
                     scale: this.revealZoomScale,
-                    x: this.revealMoveToX,
-                    y: this.revealMoveToY
+                    position: cc.v2(this.revealMoveToX, this.revealMoveToY)
                 }, { easing: 'sineOut' })
                 .delay(t2 + t3)
                 .to(t4, {
                     scale: 1,
-                    x: this._parentStartX,
-                    y: this._parentStartY
+                    position: cc.v2(this._parentStartX, this._parentStartY)
                 }, { easing: 'sineInOut' })
                 .start();
 
