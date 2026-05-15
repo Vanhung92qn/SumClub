@@ -2,7 +2,7 @@
  * XX Setting Menu View (combined)
  * Gan 1 lan tren node MenuChonPopup (root) - quan ly CA 2 lop:
  *  - Lop ngoai (popup) : openMenu / closeMenu  -> chua cac nut Top/History/Help/Exit/Setting
- *  - Lop trong (settingMenu) : openSettingMenu / closeSettingMenu  -> chua sound/music
+ *  - Lop trong (settingMenu) : openPopup / closePopup  -> chua sound/music
  *
  * Khong can wire cross-node. Tat ca button deu tro ve component nay.
  */
@@ -15,7 +15,7 @@
             animationMenu: cc.Animation,
 
             //=== Lop TRONG: settingMenu (sound/music panel) ===
-            //Animation gan tren node `settingMenu` - co 2 clip: openSettingMenu / closeSettingMenu
+            //Animation gan tren node `settingMenu` - co 2 clip: openPopup / closePopup
             animationSetting: cc.Animation,
 
             //Sound / Music toggle
@@ -101,7 +101,7 @@
         //=====================
         openSettingClicked: function () {
             if (this.isSettingOpen || this.isSettingAnimating) return;
-            this._playClip(this.animationSetting, 'openSettingMenu');
+            this._playClip(this.animationSetting, 'openPopup');
             this.isSettingOpen = true;
             this.isSettingAnimating = true;
         },
@@ -112,7 +112,7 @@
 
         _closeSetting: function () {
             if (!this.isSettingOpen || this.isSettingAnimating) return;
-            this._playClip(this.animationSetting, 'closeSettingMenu');
+            this._playClip(this.animationSetting, 'closePopup');
             this.isSettingOpen = false;
             this.isSettingAnimating = true;
         },
