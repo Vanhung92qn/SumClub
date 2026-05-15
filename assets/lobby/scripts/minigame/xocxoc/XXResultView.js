@@ -532,32 +532,50 @@
         // Server push 4 dice mini-slot truoc khi mo bat (SLOT_RESULT)
         // Phase 2: chay animation 4 cot spin -> stop stagger -> hien ket qua final.
         applySlotResult: function (slot) {
-            if (!slot) return;
+            console.log('[XXResultView] applySlotResult called, slot=', slot);
+            if (!slot) { console.warn('[XXResultView] slot null/undefined'); return; }
             try {
                 if (!cc.XXSpinController) {
-                    console.log('[XXResultView] XXSpinController chua load - slot:', slot.DiceData);
+                    console.warn('[XXResultView] cc.XXSpinController KHONG load - kiem tra spin/ folder co duoc include vao bundle khong');
                     return;
                 }
                 cc.XXSpinController.getInstance().setKetQua([slot.Dice1, slot.Dice2, slot.Dice3, slot.Dice4]);
                 cc.XXSpinController.getInstance().setSpinResponse(slot);
 
-                if (!this.nodeSpinView || !this.spinCols || this.spinCols.length === 0) {
-                    console.log('[XXResultView] nodeSpinView/spinCols chua gan - slot:', slot.DiceData);
+                if (!this.nodeSpinView) {
+                    console.warn('[XXResultView] nodeSpinView CHUA GAN trong Inspector');
                     return;
                 }
+                if (!this.spinCols || this.spinCols.length === 0) {
+                    console.warn('[XXResultView] spinCols CHUA GAN trong Inspector (can size 4)');
+                    return;
+                }
+                console.log('[XXResultView] spinCols.length=' + this.spinCols.length + ' nodeSpinView.active=' + this.nodeSpinView.active);
+
                 this.nodeSpinView.active = true;
+                // Cha cua spinView co the dang an -> bat ca cha
+                var p = this.nodeSpinView.parent;
+                while (p) { if (!p.active) { console.log('[XXResultView] bat parent ' + p.name + ' dang inactive'); p.active = true; } p = p.parent; }
 
                 // Start spin all cols
                 var self = this;
                 this.spinCols.forEach(function (col, i) {
-                    if (col && typeof col.spin === 'function') col.spin(i + 1);
+                    if (col && typeof col.spin === 'function') {
+                        console.log('[XXResultView] start spin col[' + i + '] name=' + (col.node ? col.node.name : '?'));
+                        col.spin(i + 1);
+                    } else {
+                        console.warn('[XXResultView] col[' + i + '] khong co .spin() - kiem tra co dung XXSpinColumView component khong');
+                    }
                 });
 
                 // Stop stagger
                 this.spinCols.forEach(function (col, i) {
                     var dur = self.spinDurations[i] != null ? self.spinDurations[i] : (1.5 + i * 0.5);
                     self.scheduleOnce(function () {
-                        if (col && typeof col.stop === 'function') col.stop();
+                        if (col && typeof col.stop === 'function') {
+                            console.log('[XXResultView] stop col[' + i + '] after ' + dur + 's');
+                            col.stop();
+                        }
                     }, dur);
                 });
 
