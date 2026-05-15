@@ -586,6 +586,9 @@ const players = require('PlayerData').players;
         },
 
         //dat cua
+        //  Index 0..2 = nhom LE (ODD, THREE_UP, THREE_DOWN)
+        //  Index 3..5 = nhom CHAN (EVEN, FOUR_UP, FOUR_DOWN)
+        //  Rule: 1 phien chi duoc dat 1 nhom (chan HOAC le, khong duoc ca 2).
         betClicked: function (event, data) {
             if (cc.XXController.getInstance().getTime() <= 3) {
                 cc.PopupController.getInstance().showMessage('Đã hết thời gian đặt cửa.');
@@ -596,6 +599,16 @@ const players = require('PlayerData').players;
             this.indexBet = parseInt(data.toString());
             var betVal = this.betVals[this.chipIndex];
 
+            // Chan/Le mutual exclusive
+            var currentGroup = (this.indexBet <= 2) ? 'le' : 'chan';
+            if (this._betGroupChosen && this._betGroupChosen !== currentGroup) {
+                var msg = (this._betGroupChosen === 'le')
+                    ? 'Đã đặt cửa LẺ - không thể đặt cửa CHẴN trong cùng phiên.'
+                    : 'Đã đặt cửa CHẴN - không thể đặt cửa LẺ trong cùng phiên.';
+                cc.PopupController.getInstance().showMessage(msg);
+                return;
+            }
+
             //kiem tra so du
             if (cc.BalanceController.getInstance().getBalance() < betVal) {
                 cc.PopupController.getInstance().showMessage('Số dư không đủ');
@@ -603,10 +616,19 @@ const players = require('PlayerData').players;
             } else {
                 //send request
                 cc.XXController.getInstance().sendRequestOnHub(cc.MethodHubName.BET, betVal, this.indexBet + 1);
+
+                // Lock nhom da chon cho het phien
+                this._betGroupChosen = currentGroup;
+
                 //dat -> tat luon nut X2 + reBet
                 this.btnX2.interactable = false;
                 this.btnRepeat.interactable = false;
             }
+        },
+
+        // Reset chan/le lock cho phien moi. Goi tu XXController khi state -> BETTING new round.
+        resetBetGroupLock: function () {
+            this._betGroupChosen = null;
         },
 
         //tat/bat che do Nan
@@ -658,6 +680,8 @@ const players = require('PlayerData').players;
         //clear all chip
         clearAllChip: function() {
             this.nodeParentChip.removeAllChildren(true);
+            // Reset chan/le lock - phien moi co the dat lai bat ky cua nao.
+            this._betGroupChosen = null;
         }
     });
 }).call(this);

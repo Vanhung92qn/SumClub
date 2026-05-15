@@ -41,8 +41,9 @@
         };
 
         Tool.prototype.formatNumber = function (number) {
+            // VN standard: dau cham phan nhom hang nghin (200.000 thay vi 200,000).
             if (number || number === '0' || number === 0) {
-                return parseInt(number).toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
+                return parseInt(number).toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
             } else {
                 return '';
             }

@@ -46,7 +46,11 @@ var netConfig = require('NetConfig');
             //Check Sound
             this.sound = cc.Tool.getInstance().getItem("@Sound").toString() === 'true';
 
-            this.spriteSound.spriteFrame = this.sound ? this.sfSounds[0] : this.sfSounds[1];
+            if (this.spriteSound && this.sfSounds && this.sfSounds.length >= 2) {
+                this.spriteSound.spriteFrame = this.sound ? this.sfSounds[0] : this.sfSounds[1];
+            } else {
+                cc.warn('[XXView] spriteSound chua gan hoac sfSounds thieu - Inspector cua XXView component.');
+            }
 
             cc.AudioController.getInstance().enableSound(this.sound);
         },
