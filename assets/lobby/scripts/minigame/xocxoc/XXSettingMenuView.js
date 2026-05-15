@@ -101,6 +101,13 @@
         //=====================
         openSettingClicked: function () {
             if (this.isSettingOpen || this.isSettingAnimating) return;
+            //bat node truoc khi play (vi editor co the de active=false)
+            if (this.animationSetting && this.animationSetting.node) {
+                this.animationSetting.node.active = true;
+                if (this.animationSetting.node.parent) {
+                    this.animationSetting.node.parent.active = true;
+                }
+            }
             this._playClip(this.animationSetting, 'openPopup');
             this.isSettingOpen = true;
             this.isSettingAnimating = true;
@@ -188,8 +195,13 @@
             this.isMenuAnimating = false;
         },
 
-        _onSettingAnimFinished: function () {
+        _onSettingAnimFinished: function (event) {
             this.isSettingAnimating = false;
+            //neu vua play xong closePopup -> an node di
+            var clipName = event && event.detail && event.detail.name;
+            if (clipName === 'closePopup' && this.animationSetting && this.animationSetting.node) {
+                this.animationSetting.node.active = false;
+            }
         }
     });
 }).call(this);
