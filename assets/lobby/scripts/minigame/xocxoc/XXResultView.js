@@ -141,9 +141,9 @@
                 tooltip: '4 cot XXSpinColumView (node 1, 2, 3, 4 trong slots). Theo thu tu dice 1..4.'
             },
             spinDurations: {
-                default: [1.5, 2.0, 2.5, 3.0],
+                default: [],
                 type: [cc.Float],
-                tooltip: 'Thoi gian moi cot spin truoc khi stop (giay). 4 cot stop stagger.'
+                tooltip: 'Thoi gian moi cot spin truoc khi stop (giay). 4 cot stop stagger. De trong -> auto [1.5, 2.0, 2.5, 3.0].'
             },
         },
 
@@ -177,6 +177,11 @@
             if (this.nodeJackPot) this.nodeJackPot.active = false;
             if (this.nodeSpinView) this.nodeSpinView.active = false;
             this._lastJackpotValue = 0;
+
+            // Default spinDurations neu user khong gan trong Inspector
+            if (!this.spinDurations || this.spinDurations.length === 0) {
+                this.spinDurations = [1.5, 2.0, 2.5, 3.0];
+            }
         },
 
         reset: function () {
