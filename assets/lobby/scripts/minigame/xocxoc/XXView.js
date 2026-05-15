@@ -363,7 +363,11 @@ var netConfig = require('NetConfig');
                                 }
                                 if (myAward > 0) {
                                     cc.PopupController.getInstance().showMessage(
-                                        'NỔ HŨ! Bạn nhận được ' + cc.Tool.getInstance().formatNumber(myAward) + ' VNĐ');
+                                        '🎰 NỔ HŨ! Bạn nhận được ' + cc.Tool.getInstance().formatNumber(myAward) + ' VNĐ');
+                                } else {
+                                    // Non-winner cung thay toast - nhin thay no hu da xay ra
+                                    cc.PopupController.getInstance().showMessage(
+                                        '🎰 NỔ HŨ! Pool ' + cc.Tool.getInstance().formatNumber(hit && hit.Pool || 0) + ' VNĐ đã được chia.');
                                 }
                             } catch (e) { console.warn('JACKPOT_HIT err', e); }
                             break;
