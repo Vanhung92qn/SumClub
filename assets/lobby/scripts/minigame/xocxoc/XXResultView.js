@@ -129,6 +129,22 @@
                 type: sp.Skeleton,
                 tooltip: 'Spine animation hu (optional). Play khi no.'
             },
+            // Mini-slot 4-dice animation
+            nodeSpinView: {
+                default: null,
+                type: cc.Node,
+                tooltip: 'Node spinView (cha cua 4 cot slot). Tat khi onLoad, bat khi nhan SLOT_RESULT.'
+            },
+            spinCols: {
+                default: [],
+                type: [cc.Component],
+                tooltip: '4 cot XXSpinColumView (node 1, 2, 3, 4 trong slots). Theo thu tu dice 1..4.'
+            },
+            spinDurations: {
+                default: [1.5, 2.0, 2.5, 3.0],
+                type: [cc.Float],
+                tooltip: 'Thoi gian moi cot spin truoc khi stop (giay). 4 cot stop stagger.'
+            },
         },
 
         onLoad: function () {
@@ -159,6 +175,7 @@
 
             // JACKPOT: tat popup ban dau
             if (this.nodeJackPot) this.nodeJackPot.active = false;
+            if (this.nodeSpinView) this.nodeSpinView.active = false;
             this._lastJackpotValue = 0;
         },
 
@@ -179,8 +196,9 @@
                     if (this.currentState !== state) {
                         this._showIdle();
                         this._playDealerAnim('bet');
-                        // JACKPOT: tat popup van truoc khi vao van moi
+                        // JACKPOT: tat popup + spinView van truoc khi vao van moi
                         if (this.nodeJackPot) this.nodeJackPot.active = false;
+                        if (this.nodeSpinView) this.nodeSpinView.active = false;
                     }
                     break;
 
@@ -507,16 +525,45 @@
         },
 
         // Server push 4 dice mini-slot truoc khi mo bat (SLOT_RESULT)
-        // Phase 1: chua co animation 4 dice -> chi console.log. Phase 2: play anim.
+        // Phase 2: chay animation 4 cot spin -> stop stagger -> hien ket qua final.
         applySlotResult: function (slot) {
             if (!slot) return;
             try {
-                console.log('[XXResultView] slot result:', slot.DiceData, 'jackpot=' + slot.IsJackpot);
-                // TODO Phase 2: play animation 4 dice qua cc.XXSpinController
-                // if (cc.XXSpinController) {
-                //     cc.XXSpinController.getInstance().setKetQua([slot.Dice1, slot.Dice2, slot.Dice3, slot.Dice4]);
-                //     cc.XXSpinController.getInstance().setSpinResponse(slot);
-                // }
+                if (!cc.XXSpinController) {
+                    console.log('[XXResultView] XXSpinController chua load - slot:', slot.DiceData);
+                    return;
+                }
+                cc.XXSpinController.getInstance().setKetQua([slot.Dice1, slot.Dice2, slot.Dice3, slot.Dice4]);
+                cc.XXSpinController.getInstance().setSpinResponse(slot);
+
+                if (!this.nodeSpinView || !this.spinCols || this.spinCols.length === 0) {
+                    console.log('[XXResultView] nodeSpinView/spinCols chua gan - slot:', slot.DiceData);
+                    return;
+                }
+                this.nodeSpinView.active = true;
+
+                // Start spin all cols
+                var self = this;
+                this.spinCols.forEach(function (col, i) {
+                    if (col && typeof col.spin === 'function') col.spin(i + 1);
+                });
+
+                // Stop stagger
+                this.spinCols.forEach(function (col, i) {
+                    var dur = self.spinDurations[i] != null ? self.spinDurations[i] : (1.5 + i * 0.5);
+                    self.scheduleOnce(function () {
+                        if (col && typeof col.stop === 'function') col.stop();
+                    }, dur);
+                });
+
+                // Hide spinView sau khi cot cuoi stop them 1.5s (cho user nhin ket qua)
+                var lastDur = this.spinDurations[this.spinDurations.length - 1] || 3.0;
+                this.scheduleOnce(function () {
+                    // Chi an spinView neu KHONG nổ - neu nổ thi nodeJackPot popup se che len
+                    if (!slot.IsJackpot && self.nodeSpinView) {
+                        self.nodeSpinView.active = false;
+                    }
+                }, lastDur + 1.5);
             } catch (e) { console.warn('applySlotResult err', e); }
         },
 
