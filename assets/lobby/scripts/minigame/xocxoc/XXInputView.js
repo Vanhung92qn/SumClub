@@ -43,8 +43,8 @@ const players = require('PlayerData').players;
             //  [3] Chan 1:2        [4] Chan 4 trang 1:16 [5] Chan 4 den 1:16
             //                Le1:2  Le3T   Le3D  Chan1:2 Chan4T  Chan4D
             var centerXs = [   290,  -118,   125,   -290,   -360,    360];
-            var centerYs = [    85,   -90,    90,     85,     90,     90];
-            var scatter = 50;   //bai rai chip ±50 px quanh tam
+            var centerYs = [    85,   -90,   -90,     85,    -90,    -90];
+            var scatter = 30;   //bai rai chip ±30 px quanh tam
             this.minXs = centerXs.map(function (x) { return x - scatter; });
             this.maxXs = centerXs.map(function (x) { return x + scatter; });
             this.minYs = centerYs.map(function (y) { return y - scatter; });
