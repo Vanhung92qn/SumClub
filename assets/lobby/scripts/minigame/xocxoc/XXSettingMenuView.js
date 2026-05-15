@@ -1,14 +1,22 @@
 /*
- * XX Setting Menu View
- * Menu thiet lap cho XocDia - copy pattern tu DragonTigerSettingRoomView
- * + bo sung cac nut mo popup: Top, History, Help, GroupUser
+ * XX Setting Menu View (combined)
+ * Gan 1 lan tren node MenuChonPopup (root) - quan ly CA 2 lop:
+ *  - Lop ngoai (popup) : openMenu / closeMenu  -> chua cac nut Top/History/Help/Exit/Setting
+ *  - Lop trong (settingMenu) : openSettingMenu / closeSettingMenu  -> chua sound/music
+ *
+ * Khong can wire cross-node. Tat ca button deu tro ve component nay.
  */
 (function () {
     cc.XXSettingMenuView = cc.Class({
         "extends": cc.Component,
         properties: {
-            //Animation chua 2 clip: openSettingMenu + closeSettingMenu
-            animation: cc.Animation,
+            //=== Lop NGOAI: MenuChonPopup ===
+            //Animation gan tren node `popup` - co 2 clip: openMenu / closeMenu
+            animationMenu: cc.Animation,
+
+            //=== Lop TRONG: settingMenu (sound/music panel) ===
+            //Animation gan tren node `settingMenu` - co 2 clip: openSettingMenu / closeSettingMenu
+            animationSetting: cc.Animation,
 
             //Sound / Music toggle
             spriteSound: cc.Sprite,
@@ -16,16 +24,39 @@
             sfSounds: [cc.SpriteFrame], //0=on, 1=off
             sfMusics: [cc.SpriteFrame], //0=on, 1=off
 
-            //auto close menu sau khi an 1 nut popup (Top/History/Help/GroupUser)
-            autoCloseOnPopup: true
+            //Tu dong dong settingMenu sau khi an nut popup khac (Top/History/Help/GroupUser)
+            autoCloseSettingOnPopup: true
         },
 
         onLoad: function () {
-            this.openPopup = false;
+            this.isMenuOpen = false;       //lop ngoai
+            this.isSettingOpen = false;    //lop trong
+            this.isMenuAnimating = false;
+            this.isSettingAnimating = false;
+
+            if (this.animationMenu) {
+                this.animationMenu.on(cc.Animation.EventType.FINISHED, this._onMenuAnimFinished, this);
+            }
+            if (this.animationSetting) {
+                this.animationSetting.on(cc.Animation.EventType.FINISHED, this._onSettingAnimFinished, this);
+            }
+        },
+
+        onDestroy: function () {
+            try {
+                if (this.animationMenu && cc.isValid(this.animationMenu) && cc.isValid(this.animationMenu.node)) {
+                    this.animationMenu.off(cc.Animation.EventType.FINISHED, this._onMenuAnimFinished, this);
+                }
+            } catch (e) {}
+            try {
+                if (this.animationSetting && cc.isValid(this.animationSetting) && cc.isValid(this.animationSetting.node)) {
+                    this.animationSetting.off(cc.Animation.EventType.FINISHED, this._onSettingAnimFinished, this);
+                }
+            } catch (e) {}
         },
 
         start: function () {
-            //Check Sound + Music tu local storage
+            //Sound + Music tu local storage
             this.sound = cc.Tool.getInstance().getItem("@Sound").toString() === 'true';
             this.music = cc.Tool.getInstance().getItem("@Music").toString() === 'true';
 
@@ -41,24 +72,49 @@
         },
 
         //=====================
-        // Toggle menu
+        // LOP NGOAI - MenuChonPopup
+        //=====================
+        menuOpenClicked: function () {
+            if (this.isMenuOpen || this.isMenuAnimating) return;
+            this._playClip(this.animationMenu, 'openMenu');
+            this.isMenuOpen = true;
+            this.isMenuAnimating = true;
+        },
+
+        menuCloseClicked: function () {
+            if (!this.isMenuOpen || this.isMenuAnimating) return;
+            this._playClip(this.animationMenu, 'closeMenu');
+            this.isMenuOpen = false;
+            this.isMenuAnimating = true;
+            //dong luon settingMenu neu dang mo
+            if (this.isSettingOpen) this._closeSetting();
+        },
+
+        menuToggleClicked: function () {
+            if (this.isMenuAnimating) return;
+            if (this.isMenuOpen) this.menuCloseClicked();
+            else this.menuOpenClicked();
+        },
+
+        //=====================
+        // LOP TRONG - settingMenu (sound/music panel)
         //=====================
         openSettingClicked: function () {
-            if (this.openPopup === false) {
-                this.openPopup = true;
-                if (this.animation) this.animation.play('openSettingMenu');
-            } else {
-                this._closeMenu();
-            }
+            if (this.isSettingOpen || this.isSettingAnimating) return;
+            this._playClip(this.animationSetting, 'openSettingMenu');
+            this.isSettingOpen = true;
+            this.isSettingAnimating = true;
         },
 
         closeSettingClicked: function () {
-            this._closeMenu();
+            this._closeSetting();
         },
 
-        _closeMenu: function () {
-            this.openPopup = false;
-            if (this.animation) this.animation.play('closeSettingMenu');
+        _closeSetting: function () {
+            if (!this.isSettingOpen || this.isSettingAnimating) return;
+            this._playClip(this.animationSetting, 'closeSettingMenu');
+            this.isSettingOpen = false;
+            this.isSettingAnimating = true;
         },
 
         //=====================
@@ -83,26 +139,57 @@
         },
 
         //=====================
-        // Popup buttons - dung lai XXPopupController co san
+        // Cac nut popup - dung lai XXPopupController co san
         //=====================
         topClicked: function () {
             cc.XXPopupController.getInstance().createTopView();
-            if (this.autoCloseOnPopup) this._closeMenu();
+            if (this.autoCloseSettingOnPopup && this.isSettingOpen) this._closeSetting();
         },
 
         historyClicked: function () {
             cc.XXPopupController.getInstance().createHistoryView();
-            if (this.autoCloseOnPopup) this._closeMenu();
+            if (this.autoCloseSettingOnPopup && this.isSettingOpen) this._closeSetting();
         },
 
         helpClicked: function () {
             cc.XXPopupController.getInstance().createHelpView();
-            if (this.autoCloseOnPopup) this._closeMenu();
+            if (this.autoCloseSettingOnPopup && this.isSettingOpen) this._closeSetting();
         },
 
         groupUserClicked: function () {
             cc.XXPopupController.getInstance().createGroupUserView();
-            if (this.autoCloseOnPopup) this._closeMenu();
+            if (this.autoCloseSettingOnPopup && this.isSettingOpen) this._closeSetting();
+        },
+
+        exitClicked: function () {
+            cc.LobbyController.getInstance().destroyDynamicView(null);
+        },
+
+        //=====================
+        // PRIVATE
+        //=====================
+        _playClip: function (anim, clipName) {
+            if (!anim) {
+                cc.warn('[XXSettingMenuView] animation chua gan, bo qua clip:', clipName);
+                return;
+            }
+            var clip = anim.getClips().find(function (c) {
+                return c && c.name === clipName;
+            });
+            if (!clip) {
+                cc.warn('[XXSettingMenuView] khong tim thay clip:', clipName);
+                return;
+            }
+            anim.stop();
+            anim.play(clipName);
+        },
+
+        _onMenuAnimFinished: function () {
+            this.isMenuAnimating = false;
+        },
+
+        _onSettingAnimFinished: function () {
+            this.isSettingAnimating = false;
         }
     });
 }).call(this);
