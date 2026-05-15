@@ -137,8 +137,8 @@
             },
             spinCols: {
                 default: [],
-                type: [cc.Component],
-                tooltip: '4 cot XXSpinColumView (node 1, 2, 3, 4 trong slots). Theo thu tu dice 1..4.'
+                type: [cc.Node],
+                tooltip: '4 node 1/2/3/4 trong slots (theo thu tu dice 1..4). Code se tu getComponent(XXSpinColumView).'
             },
             spinDurations: {
                 default: [],
@@ -553,23 +553,35 @@
                 console.log('[XXResultView] spinCols.length=' + this.spinCols.length + ' nodeSpinView.active=' + this.nodeSpinView.active);
 
                 this.nodeSpinView.active = true;
-                // Cha cua spinView co the dang an -> bat ca cha
-                var p = this.nodeSpinView.parent;
-                while (p) { if (!p.active) { console.log('[XXResultView] bat parent ' + p.name + ' dang inactive'); p.active = true; } p = p.parent; }
+                // Bat cha trc tiep neu dang inactive (chi 1 level - khong walk len Scene)
+                var direct = this.nodeSpinView.parent;
+                if (direct && direct.active === false) {
+                    console.log('[XXResultView] bat parent ' + direct.name);
+                    direct.active = true;
+                }
+
+                // Resolve XXSpinColumView component tu node + cache
+                var self = this;
+                var cols = this.spinCols.map(function (n) {
+                    if (!n) return null;
+                    // Neu da la component thi return luon, neu la node thi getComponent
+                    if (typeof n.spin === 'function') return n;
+                    if (n.getComponent) return n.getComponent(cc.XXSpinColumView);
+                    return null;
+                });
 
                 // Start spin all cols
-                var self = this;
-                this.spinCols.forEach(function (col, i) {
+                cols.forEach(function (col, i) {
                     if (col && typeof col.spin === 'function') {
                         console.log('[XXResultView] start spin col[' + i + '] name=' + (col.node ? col.node.name : '?'));
                         col.spin(i + 1);
                     } else {
-                        console.warn('[XXResultView] col[' + i + '] khong co .spin() - kiem tra co dung XXSpinColumView component khong');
+                        console.warn('[XXResultView] col[' + i + '] resolve XXSpinColumView fail - kiem tra component co dung khong');
                     }
                 });
 
                 // Stop stagger
-                this.spinCols.forEach(function (col, i) {
+                cols.forEach(function (col, i) {
                     var dur = self.spinDurations[i] != null ? self.spinDurations[i] : (1.5 + i * 0.5);
                     self.scheduleOnce(function () {
                         if (col && typeof col.stop === 'function') {
