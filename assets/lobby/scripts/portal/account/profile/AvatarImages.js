@@ -15,7 +15,10 @@
         },
 
         getAvatarImage: function(id) {
-            return this.avatarSpriteFrames[id - 1];
+            var n = this.avatarSpriteFrames ? this.avatarSpriteFrames.length : 0;
+            if (n <= 0) return null;
+            var i = (typeof id === 'number' && id > 0) ? id : 1;
+            return this.avatarSpriteFrames[(i - 1) % n];
         },
     });
 }).call(this);

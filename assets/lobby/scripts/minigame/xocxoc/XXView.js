@@ -12,7 +12,6 @@ var netConfig = require('NetConfig');
             sfSounds: [cc.SpriteFrame], //0=on, 1=off
 
             spriteBack: cc.Sprite,
-            nodeRegisterLeave: cc.Node,
 
             nodeParentChat: cc.Node,
             prefabChat: cc.Prefab,
