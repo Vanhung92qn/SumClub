@@ -201,9 +201,9 @@
                     if (this.currentState !== state) {
                         this._showIdle();
                         this._playDealerAnim('bet');
-                        // JACKPOT: tat popup + spinView van truoc khi vao van moi
+                        // JACKPOT: tat popup van truoc, start spin loop xuyen suot van
                         if (this.nodeJackPot) this.nodeJackPot.active = false;
-                        if (this.nodeSpinView) this.nodeSpinView.active = false;
+                        this._startSpinLoop();
                     }
                     break;
 
@@ -529,75 +529,88 @@
             this._lastJackpotValue = pool;
         },
 
-        // Server push 4 dice mini-slot truoc khi mo bat (SLOT_RESULT)
-        // Phase 2: chay animation 4 cot spin -> stop stagger -> hien ket qua final.
+        // Helper: resolve XXSpinColumView component tu spinCols (co the la Node hoac Component)
+        _resolveSpinCols: function () {
+            if (!this.spinCols) return [];
+            return this.spinCols.map(function (n) {
+                if (!n) return null;
+                if (typeof n.spin === 'function') return n;
+                if (n.getComponent) return n.getComponent(cc.XXSpinColumView);
+                return null;
+            });
+        },
+
+        // Start spin loop - goi khi BETTING bat dau. Spin lien tuc cho den khi SLOT_RESULT.
+        _startSpinLoop: function () {
+            if (!this.nodeSpinView) {
+                console.warn('[XXResultView] _startSpinLoop: nodeSpinView chua gan');
+                return;
+            }
+            if (!this.spinCols || this.spinCols.length === 0) {
+                console.warn('[XXResultView] _startSpinLoop: spinCols chua gan');
+                return;
+            }
+            if (this._isSpinning) {
+                console.log('[XXResultView] _startSpinLoop: dang spin roi, bo qua');
+                return;
+            }
+
+            this.nodeSpinView.active = true;
+            var direct = this.nodeSpinView.parent;
+            if (direct && direct.active === false) direct.active = true;
+
+            var cols = this._resolveSpinCols();
+            cols.forEach(function (col, i) {
+                if (col && typeof col.spin === 'function') {
+                    col.spin(i + 1);
+                } else {
+                    console.warn('[XXResultView] col[' + i + '] resolve XXSpinColumView fail');
+                }
+            });
+            this._isSpinning = true;
+            console.log('[XXResultView] _startSpinLoop: spin start tat ca 4 cot');
+        },
+
+        // Server push 4 dice mini-slot sau khi roll (SLOT_RESULT).
+        // Logic: spin DA chay tu BETTING -> day chi stop stagger voi ketQua final.
         applySlotResult: function (slot) {
             console.log('[XXResultView] applySlotResult called, slot=', slot);
             if (!slot) { console.warn('[XXResultView] slot null/undefined'); return; }
             try {
                 if (!cc.XXSpinController) {
-                    console.warn('[XXResultView] cc.XXSpinController KHONG load - kiem tra spin/ folder co duoc include vao bundle khong');
+                    console.warn('[XXResultView] cc.XXSpinController KHONG load');
                     return;
                 }
                 cc.XXSpinController.getInstance().setKetQua([slot.Dice1, slot.Dice2, slot.Dice3, slot.Dice4]);
                 cc.XXSpinController.getInstance().setSpinResponse(slot);
 
-                if (!this.nodeSpinView) {
-                    console.warn('[XXResultView] nodeSpinView CHUA GAN trong Inspector');
-                    return;
+                // Edge case: client join mid-game, miss BETTING start -> start spin now
+                if (!this._isSpinning) {
+                    console.log('[XXResultView] applySlotResult: spin chua start (join giua van) - start now');
+                    this._startSpinLoop();
                 }
-                if (!this.spinCols || this.spinCols.length === 0) {
-                    console.warn('[XXResultView] spinCols CHUA GAN trong Inspector (can size 4)');
-                    return;
-                }
-                console.log('[XXResultView] spinCols.length=' + this.spinCols.length + ' nodeSpinView.active=' + this.nodeSpinView.active);
-
-                this.nodeSpinView.active = true;
-                // Bat cha trc tiep neu dang inactive (chi 1 level - khong walk len Scene)
-                var direct = this.nodeSpinView.parent;
-                if (direct && direct.active === false) {
-                    console.log('[XXResultView] bat parent ' + direct.name);
-                    direct.active = true;
-                }
-
-                // Resolve XXSpinColumView component tu node + cache
-                var self = this;
-                var cols = this.spinCols.map(function (n) {
-                    if (!n) return null;
-                    // Neu da la component thi return luon, neu la node thi getComponent
-                    if (typeof n.spin === 'function') return n;
-                    if (n.getComponent) return n.getComponent(cc.XXSpinColumView);
-                    return null;
-                });
-
-                // Start spin all cols
-                cols.forEach(function (col, i) {
-                    if (col && typeof col.spin === 'function') {
-                        console.log('[XXResultView] start spin col[' + i + '] name=' + (col.node ? col.node.name : '?'));
-                        col.spin(i + 1);
-                    } else {
-                        console.warn('[XXResultView] col[' + i + '] resolve XXSpinColumView fail - kiem tra component co dung khong');
-                    }
-                });
 
                 // Stop stagger
+                var self = this;
+                var cols = this._resolveSpinCols();
                 cols.forEach(function (col, i) {
                     var dur = self.spinDurations[i] != null ? self.spinDurations[i] : (1.5 + i * 0.5);
                     self.scheduleOnce(function () {
                         if (col && typeof col.stop === 'function') {
-                            console.log('[XXResultView] stop col[' + i + '] after ' + dur + 's');
+                            console.log('[XXResultView] stop col[' + i + '] after ' + dur + 's, dice=' + slot['Dice' + (i + 1)]);
                             col.stop();
                         }
                     }, dur);
                 });
 
-                // Hide spinView sau khi cot cuoi stop them 1.5s (cho user nhin ket qua)
+                // Sau khi cot cuoi stop them 1.5s: clear flag _isSpinning + an spinView (neu khong no)
                 var lastDur = this.spinDurations[this.spinDurations.length - 1] || 3.0;
                 this.scheduleOnce(function () {
-                    // Chi an spinView neu KHONG nổ - neu nổ thi nodeJackPot popup se che len
+                    self._isSpinning = false;
                     if (!slot.IsJackpot && self.nodeSpinView) {
                         self.nodeSpinView.active = false;
                     }
+                    // Neu no hu -> nodeJackPot popup se che len (handle trong applyJackpotHit)
                 }, lastDur + 1.5);
             } catch (e) { console.warn('applySlotResult err', e); }
         },
