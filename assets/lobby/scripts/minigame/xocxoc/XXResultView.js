@@ -102,6 +102,33 @@
             nodeLe1: cc.Node,
             nodeLe2: cc.Node,
             nodeLe3: cc.Node,
+
+            // ── JACKPOT Hoang Kim Long ───────────────────────────────
+            // Label tween so pool (update moi sessionInfo / moi PlayNow)
+            // Co the gan cc.LabelIncrement (tween) hoac cc.Label (set string thuong)
+            jackpot: {
+                default: null,
+                type: cc.Component,
+                tooltip: 'Label hien thi pool jackpot. cc.LabelIncrement (tween) hoac cc.Label thuong.'
+            },
+            // Panel popup hien khi no - chua label tien thuong + fx phao hoa
+            nodeJackPot: {
+                default: null,
+                type: cc.Node,
+                tooltip: 'Node popup hien khi no hu. Tat luc onLoad, bat khi nhan jackpotHit.'
+            },
+            // Label hien so tien user nhan (neu trung) hoac tong pool
+            lbJackpot_Hu: {
+                default: null,
+                type: cc.Label,
+                tooltip: 'Label trong popup nodeJackPot - hien tien thuong.'
+            },
+            // Spine animation hu (optional)
+            animationHu: {
+                default: null,
+                type: sp.Skeleton,
+                tooltip: 'Spine animation hu (optional). Play khi no.'
+            },
         },
 
         onLoad: function () {
@@ -129,6 +156,10 @@
             // Defensive: prefab cu chua co revealMoveToX/Y -> Cocos co the load undefined.
             if (this.revealMoveToX == null) this.revealMoveToX = 0;
             if (this.revealMoveToY == null) this.revealMoveToY = 0;
+
+            // JACKPOT: tat popup ban dau
+            if (this.nodeJackPot) this.nodeJackPot.active = false;
+            this._lastJackpotValue = 0;
         },
 
         reset: function () {
@@ -148,6 +179,8 @@
                     if (this.currentState !== state) {
                         this._showIdle();
                         this._playDealerAnim('bet');
+                        // JACKPOT: tat popup van truoc khi vao van moi
+                        if (this.nodeJackPot) this.nodeJackPot.active = false;
                     }
                     break;
 
@@ -446,6 +479,72 @@
                     }
                 });
             } catch (e) { /* ignore */ }
+        },
+
+        // ─────────────────────────────────────────────────────────────
+        //  JACKPOT Hoang Kim Long
+        // ─────────────────────────────────────────────────────────────
+
+        // Set label pool. Support ca cc.LabelIncrement (tween) va cc.Label (set string).
+        _setJackpotPool: function (pool) {
+            if (!this.jackpot) return;
+            var val = pool || 0;
+            try {
+                if (typeof this.jackpot.tweenValueto === 'function') {
+                    this.jackpot.tweenValueto(val);
+                } else if (this.jackpot.string !== undefined) {
+                    this.jackpot.string = cc.Tool.getInstance().formatNumber(val);
+                }
+            } catch (e) {
+                cc.warn('[XXResultView] _setJackpotPool err', e);
+            }
+        },
+
+        // Server push pool init khi user PlayNow (JACKPOT_INFO)
+        updateJackpotPool: function (pool) {
+            this._setJackpotPool(pool);
+            this._lastJackpotValue = pool;
+        },
+
+        // Server push 4 dice mini-slot truoc khi mo bat (SLOT_RESULT)
+        // Phase 1: chua co animation 4 dice -> chi console.log. Phase 2: play anim.
+        applySlotResult: function (slot) {
+            if (!slot) return;
+            try {
+                console.log('[XXResultView] slot result:', slot.DiceData, 'jackpot=' + slot.IsJackpot);
+                // TODO Phase 2: play animation 4 dice qua cc.XXSpinController
+                // if (cc.XXSpinController) {
+                //     cc.XXSpinController.getInstance().setKetQua([slot.Dice1, slot.Dice2, slot.Dice3, slot.Dice4]);
+                //     cc.XXSpinController.getInstance().setSpinResponse(slot);
+                // }
+            } catch (e) { console.warn('applySlotResult err', e); }
+        },
+
+        // Server push khi no hu (JACKPOT_HIT)
+        applyJackpotHit: function (hit) {
+            if (!hit || !this.nodeJackPot) return;
+            try {
+                var myId = cc.LoginController.getInstance().getUserId();
+                var myAward = 0;
+                var winners = hit.Winners || [];
+                for (var i = 0; i < winners.length; i++) {
+                    if (winners[i].AccountID == myId) { myAward = winners[i].Award; break; }
+                }
+                if (this.lbJackpot_Hu) {
+                    // User trung: show tien user nhan. Khong trung: show tong pool.
+                    this.lbJackpot_Hu.string = cc.Tool.getInstance().formatNumber(myAward > 0 ? myAward : (hit.Pool || 0));
+                }
+                this.nodeJackPot.active = true;
+                // Optional: play spine hu
+                if (this.animationHu) {
+                    try {
+                        this.animationHu.clearTracks();
+                        this.animationHu.setToSetupPose();
+                        this.animationHu.setAnimation(0, 'boom', false);
+                    } catch (e) { /* anim 'boom' khong ton tai - ignore */ }
+                }
+                console.log('[XXResultView] Jackpot hit! pool=' + hit.Pool + ' myAward=' + myAward);
+            } catch (e) { console.warn('applyJackpotHit err', e); }
         },
     });
 }).call(this);

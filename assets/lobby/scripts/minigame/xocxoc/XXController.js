@@ -322,6 +322,24 @@
         XXController.prototype.getLogBet = function () {
             return this.logBet;
         };
+
+        //JACKPOT - forward tu XXView (hub event) -> XXResultView (UI)
+        XXController.prototype.applySlotResult = function (slot) {
+            if (this.xxResultView && this.xxResultView.applySlotResult) {
+                this.xxResultView.applySlotResult(slot);
+            }
+        };
+        XXController.prototype.applyJackpotHit = function (hit) {
+            if (this.xxResultView && this.xxResultView.applyJackpotHit) {
+                this.xxResultView.applyJackpotHit(hit);
+            }
+        };
+        XXController.prototype.updateJackpotPool = function (pool) {
+            if (this.xxResultView && this.xxResultView.updateJackpotPool) {
+                this.xxResultView.updateJackpotPool(pool);
+            }
+        };
+
         return XXController;
 
     })();

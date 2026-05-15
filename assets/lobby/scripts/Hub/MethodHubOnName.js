@@ -142,7 +142,12 @@
         CURR_SESSION_INFO: 'currSessionInfo',
         //VietLot
         SESSION_RESULT: 'sessionResult',
-        UPDATE_TIMER: 'updateTimer'
+        UPDATE_TIMER: 'updateTimer',
+
+        //XocDia Jackpot Hoang Kim Long
+        SLOT_RESULT:  'slotResult',   //mini-slot 4 dice 1..6 (push truoc khi mo bat)
+        JACKPOT_HIT:  'jackpotHit',   //no hu - list winners + award
+        JACKPOT_INFO: 'jackpotInfo'   //pool info push khi user PlayNow (sync ban dau)
 
     });
 

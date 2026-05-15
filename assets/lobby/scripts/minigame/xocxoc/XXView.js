@@ -209,6 +209,8 @@ var netConfig = require('NetConfig');
                             // cc.XXController.getInstance().updateSessionId(m.A[0].SessionID);
                             cc.XXController.getInstance().updateInfo(m.A[0], m.A[0].Phrase, null);
                             cc.XXController.getInstance().updateInput(m.A[0].Phrase);
+                            // JACKPOT: tween pool theo data server push
+                            if (m.A[0] && m.A[0].Jackpot != null) cc.XXController.getInstance().updateJackpotPool(m.A[0].Jackpot);
                             break;
                         //Lich su choi
                         case cc.MethodHubOnName.GAME_HISTORY:
@@ -223,6 +225,8 @@ var netConfig = require('NetConfig');
                             // cc.XXController.getInstance().updateResult(data[0].Players, data[0].GameLoop.Result, data[0].GameLoop.OriginResult, data[2]);
                             cc.XXController.getInstance().updateResult(null, data[0].Result, data[0].Result.ChipsData, data[2]);
                             cc.XXController.getInstance().updateInput(data[2]);
+                            // JACKPOT: tween pool theo data.Jackpot server push
+                            if (data[0] && data[0].Jackpot != null) cc.XXController.getInstance().updateJackpotPool(data[0].Jackpot);
                             break;
                         //nguoi choi roi ban
                         case cc.MethodHubOnName.PLAYER_LEAVE:
@@ -337,6 +341,39 @@ var netConfig = require('NetConfig');
 
                         case cc.MethodHubOnName.UPDATE_ROOM_TIME:
                             cc.XXController.getInstance().updateTimer(m.A[0]);
+                            break;
+
+                        // ===== JACKPOT Hoang Kim Long =====
+                        // Mini-slot 4 dice result (push truoc khi mo bat)
+                        case cc.MethodHubOnName.SLOT_RESULT:
+                            try {
+                                cc.XXController.getInstance().applySlotResult(m.A[0]);
+                            } catch (e) { console.warn('SLOT_RESULT err', e); }
+                            break;
+                        // No hu (sau khi resolve session)
+                        case cc.MethodHubOnName.JACKPOT_HIT:
+                            try {
+                                var hit = m.A[0];
+                                cc.XXController.getInstance().applyJackpotHit(hit);
+                                var myId = cc.LoginController.getInstance().getUserId();
+                                var winners = (hit && hit.Winners) || [];
+                                var myAward = 0;
+                                for (var i = 0; i < winners.length; i++) {
+                                    if (winners[i].AccountID == myId) { myAward = winners[i].Award; break; }
+                                }
+                                if (myAward > 0) {
+                                    cc.PopupController.getInstance().showMessage(
+                                        'NỔ HŨ! Bạn nhận được ' + cc.Tool.getInstance().formatNumber(myAward) + ' VNĐ');
+                                }
+                            } catch (e) { console.warn('JACKPOT_HIT err', e); }
+                            break;
+                        // Pool init khi PlayNow
+                        case cc.MethodHubOnName.JACKPOT_INFO:
+                            try {
+                                var jp = m.A[0];
+                                if (jp) cc.XXController.getInstance().updateJackpotPool(jp.Pool);
+                            } catch (e) { }
+                            break;
 
                     }
                 });
