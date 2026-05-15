@@ -603,14 +603,12 @@
                     }, dur);
                 });
 
-                // Sau khi cot cuoi stop them 1.5s: clear flag _isSpinning + an spinView (neu khong no)
+                // Sau khi cot cuoi stop them 1.5s: clear flag _isSpinning.
+                // KHONG tat nodeSpinView - giu hien thi 4 dice ket qua xuyen suot SHOW_RESULT.
+                // Phien moi (BETTING) -> _startSpinLoop() se spin lai tu dau.
                 var lastDur = this.spinDurations[this.spinDurations.length - 1] || 3.0;
                 this.scheduleOnce(function () {
                     self._isSpinning = false;
-                    if (!slot.IsJackpot && self.nodeSpinView) {
-                        self.nodeSpinView.active = false;
-                    }
-                    // Neu no hu -> nodeJackPot popup se che len (handle trong applyJackpotHit)
                 }, lastDur + 1.5);
             } catch (e) { console.warn('applySlotResult err', e); }
         },
