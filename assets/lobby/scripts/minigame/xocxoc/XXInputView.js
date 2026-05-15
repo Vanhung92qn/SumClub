@@ -39,13 +39,13 @@ const players = require('PlayerData').players;
             });
 
 //toa do X, Y tu min -> max cac o BET theo thu tu
-            //4 3 0 1
-            //5     2
-//                        chan  3     1    chín     2       okle
-            this.minXs = [200, 300,   100,  -300,   -300,     -100]; //size phai
-            this.maxXs = [100, 300,   100,  -200,  -300,     -100]; // size trai
-            this.minYs = [30, -100, -100, 30,   -100,     -100]; // size cao
-            this.maxYs = [30, -100,  -100,  30,   -100,    -100]; // size thap
+            //  [0] Le 1:2          [1] Le 3 trang 1:4    [2] Le 3 den 1:4
+            //  [3] Chan 1:2        [4] Chan 4 trang 1:16 [5] Chan 4 den 1:16
+            //              Le1:2  Le3T   Le3D  Chan1:2 Chan4T  Chan4D
+            this.minXs = [  290,  -118,   125,   -290,   -360,    360];
+            this.maxXs = [  290,  -118,   125,   -290,   -360,    360];
+            this.minYs = [   85,   -90,    90,     85,     90,     90];
+            this.maxYs = [   85,   -90,    90,     85,     90,     90];
 
             //vi tri dealer
             this.rootDealerPos = cc.v2(0, 136);
@@ -72,7 +72,7 @@ const players = require('PlayerData').players;
             this.timeouts = [];
 
             //Vi tri cua groupUser
-            this.posGroupUser = cc.v2(-193, 219);
+            this.posGroupUser = cc.v2(420, 250);
 
             this.initGateChip();
             cc.XXController.getInstance().initLogBet();
