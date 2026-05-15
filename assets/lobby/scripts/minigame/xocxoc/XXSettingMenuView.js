@@ -10,9 +10,6 @@
             //Animation chua 2 clip: openSettingMenu + closeSettingMenu
             animation: cc.Animation,
 
-            //Node nen mo cua menu (optional - bg dim phia sau)
-            nodeBgSetting: cc.Node,
-
             //Sound / Music toggle
             spriteSound: cc.Sprite,
             spriteMusic: cc.Sprite,
@@ -25,9 +22,6 @@
 
         onLoad: function () {
             this.openPopup = false;
-            if (this.nodeBgSetting) {
-                this.nodeBgSetting.active = false;
-            }
         },
 
         start: function () {
@@ -52,7 +46,6 @@
         openSettingClicked: function () {
             if (this.openPopup === false) {
                 this.openPopup = true;
-                if (this.nodeBgSetting) this.nodeBgSetting.active = true;
                 if (this.animation) this.animation.play('openSettingMenu');
             } else {
                 this._closeMenu();
@@ -66,11 +59,6 @@
         _closeMenu: function () {
             this.openPopup = false;
             if (this.animation) this.animation.play('closeSettingMenu');
-            if (this.nodeBgSetting) {
-                this.scheduleOnce(function () {
-                    this.nodeBgSetting.active = false;
-                }.bind(this), 0.2);
-            }
         },
 
         //=====================
