@@ -586,9 +586,12 @@ const players = require('PlayerData').players;
         },
 
         //dat cua
-        //  Index 0..2 = nhom LE (ODD, THREE_UP, THREE_DOWN)
-        //  Index 3..5 = nhom CHAN (EVEN, FOUR_UP, FOUR_DOWN)
-        //  Rule: 1 phien chi duoc dat 1 nhom (chan HOAC le, khong duoc ca 2).
+        //  Mapping index <-> cua:
+        //    [0] LE 1:2     [1] LE 3 trang 1:4    [2] LE 3 den 1:4
+        //    [3] CHAN 1:2   [4] CHAN 4 trang 1:16 [5] CHAN 4 den 1:16
+        //
+        //  Rule: CHI block giua "LE 1:2" (index 0) va "CHAN 1:2" (index 3).
+        //  Cac cua 1:4 va 1:16 (1, 2, 4, 5) LUON cho phep (khong block).
         betClicked: function (event, data) {
             if (cc.XXController.getInstance().getTime() <= 3) {
                 cc.PopupController.getInstance().showMessage('Đã hết thời gian đặt cửa.');
@@ -599,13 +602,13 @@ const players = require('PlayerData').players;
             this.indexBet = parseInt(data.toString());
             var betVal = this.betVals[this.chipIndex];
 
-            // Chan/Le mutual exclusive
-            var currentGroup = (this.indexBet <= 2) ? 'le' : 'chan';
-            if (this._betGroupChosen && this._betGroupChosen !== currentGroup) {
-                var msg = (this._betGroupChosen === 'le')
-                    ? 'Đã đặt cửa LẺ - không thể đặt cửa CHẴN trong cùng phiên.'
-                    : 'Đã đặt cửa CHẴN - không thể đặt cửa LẺ trong cùng phiên.';
-                cc.PopupController.getInstance().showMessage(msg);
+            // Block chi giua 2 cua 1:2
+            if (this.indexBet === 0 && this._hasBetChan12) {
+                cc.PopupController.getInstance().showMessage('Đã đặt CHẴN 1:2 - không thể đặt LẺ 1:2 trong cùng phiên.');
+                return;
+            }
+            if (this.indexBet === 3 && this._hasBetLe12) {
+                cc.PopupController.getInstance().showMessage('Đã đặt LẺ 1:2 - không thể đặt CHẴN 1:2 trong cùng phiên.');
                 return;
             }
 
@@ -617,18 +620,14 @@ const players = require('PlayerData').players;
                 //send request
                 cc.XXController.getInstance().sendRequestOnHub(cc.MethodHubName.BET, betVal, this.indexBet + 1);
 
-                // Lock nhom da chon cho het phien
-                this._betGroupChosen = currentGroup;
+                // Track 2 cua 1:2 da dat (chi 2 cua nay co rang buoc voi nhau)
+                if (this.indexBet === 0) this._hasBetLe12 = true;
+                if (this.indexBet === 3) this._hasBetChan12 = true;
 
                 //dat -> tat luon nut X2 + reBet
                 this.btnX2.interactable = false;
                 this.btnRepeat.interactable = false;
             }
-        },
-
-        // Reset chan/le lock cho phien moi. Goi tu XXController khi state -> BETTING new round.
-        resetBetGroupLock: function () {
-            this._betGroupChosen = null;
         },
 
         //tat/bat che do Nan
@@ -680,8 +679,9 @@ const players = require('PlayerData').players;
         //clear all chip
         clearAllChip: function() {
             this.nodeParentChip.removeAllChildren(true);
-            // Reset chan/le lock - phien moi co the dat lai bat ky cua nao.
-            this._betGroupChosen = null;
+            // Reset 2 lock 1:2 - phien moi co the dat lai LE 1:2 hoac CHAN 1:2.
+            this._hasBetLe12 = false;
+            this._hasBetChan12 = false;
         }
     });
 }).call(this);
