@@ -351,10 +351,10 @@ var netConfig = require('NetConfig');
                             } catch (e) { console.warn('SLOT_RESULT err', e); }
                             break;
                         // No hu (sau khi resolve session)
+                        // CHI winner thay hieu ung - non-winner khong nhan gi (im lang)
                         case cc.MethodHubOnName.JACKPOT_HIT:
                             try {
                                 var hit = m.A[0];
-                                cc.XXController.getInstance().applyJackpotHit(hit);
                                 var myId = cc.LoginController.getInstance().getUserId();
                                 var winners = (hit && hit.Winners) || [];
                                 var myAward = 0;
@@ -362,13 +362,11 @@ var netConfig = require('NetConfig');
                                     if (winners[i].AccountID == myId) { myAward = winners[i].Award; break; }
                                 }
                                 if (myAward > 0) {
+                                    cc.XXController.getInstance().applyJackpotHit(hit);
                                     cc.PopupController.getInstance().showMessage(
                                         '🎰 NỔ HŨ! Bạn nhận được ' + cc.Tool.getInstance().formatNumber(myAward) + ' VNĐ');
-                                } else {
-                                    // Non-winner cung thay toast - nhin thay no hu da xay ra
-                                    cc.PopupController.getInstance().showMessage(
-                                        '🎰 NỔ HŨ! Pool ' + cc.Tool.getInstance().formatNumber(hit && hit.Pool || 0) + ' VNĐ đã được chia.');
                                 }
+                                // Non-winner: KHONG goi applyJackpotHit, KHONG popup, KHONG toast
                             } catch (e) { console.warn('JACKPOT_HIT err', e); }
                             break;
                         // Pool init khi PlayNow

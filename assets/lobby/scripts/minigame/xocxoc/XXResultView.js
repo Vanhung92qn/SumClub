@@ -613,7 +613,8 @@
             } catch (e) { console.warn('applySlotResult err', e); }
         },
 
-        // Server push khi no hu (JACKPOT_HIT)
+        // Server push khi no hu (JACKPOT_HIT). CHI goi khi user LA winner (filter o XXView).
+        // Non-winner KHONG goi method nay -> khong show popup, khong toast.
         applyJackpotHit: function (hit) {
             if (!hit || !this.nodeJackPot) return;
             try {
@@ -623,20 +624,19 @@
                 for (var i = 0; i < winners.length; i++) {
                     if (winners[i].AccountID == myId) { myAward = winners[i].Award; break; }
                 }
+                if (myAward <= 0) return; // safety guard - chi winner moi show
                 if (this.lbJackpot_Hu) {
-                    // User trung: show tien user nhan. Khong trung: show tong pool.
-                    this.lbJackpot_Hu.string = cc.Tool.getInstance().formatNumber(myAward > 0 ? myAward : (hit.Pool || 0));
+                    this.lbJackpot_Hu.string = cc.Tool.getInstance().formatNumber(myAward);
                 }
                 this.nodeJackPot.active = true;
-                // Optional: play spine hu
                 if (this.animationHu) {
                     try {
                         this.animationHu.clearTracks();
                         this.animationHu.setToSetupPose();
                         this.animationHu.setAnimation(0, 'boom', false);
-                    } catch (e) { /* anim 'boom' khong ton tai - ignore */ }
+                    } catch (e) {}
                 }
-                console.log('[XXResultView] Jackpot hit! pool=' + hit.Pool + ' myAward=' + myAward);
+                console.log('[XXResultView] Jackpot WIN! award=' + myAward);
             } catch (e) { console.warn('applyJackpotHit err', e); }
         },
     });
