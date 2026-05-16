@@ -39,11 +39,19 @@ const players = require('PlayerData').players;
             });
 
 //toa do X, Y cua tam o BET + bai rai chip ±N quanh tam
-            //  [0] Le 1:2          [1] Le 3 trang 1:4    [2] Le 3 den 1:4
-            //  [3] Chan 1:2        [4] Chan 4 trang 1:16 [5] Chan 4 den 1:16
-            //                Le1:2  Le3T   Le3D  Chan1:2 Chan4T  Chan4D
-            var centerXs = [   290,  -118,   125,   -290,   -360,    360];
-            var centerYs = [    85,   -90,   -90,     85,    -90,    -90];
+            //  Sau khi swap button data trong Cocos editor (2026-05-16):
+            //    [0] Le 1:2      = gate 1 (Odd)         button data="0"
+            //    [1] Le 3 DEN    = gate 2 (ThreeUp)     button data="1" (truoc data "3 trang")
+            //    [2] Le 3 TRANG  = gate 3 (ThreeDown)   button data="2" (truoc data "3 den")
+            //    [3] Chan 1:2    = gate 4 (Even)        button data="3"
+            //    [4] Chan 4 DEN  = gate 5 (FourUp)      button data="4" (truoc data "4 trang")
+            //    [5] Chan 4 TRANG= gate 6 (FourDown)    button data="5" (truoc data "4 den")
+            //
+            //  Vi tri = vi tri visual cua button TUONG UNG (button "3 den" nam o cho cu Le3D).
+            //  centerXs/Ys da swap [1]<->[2] va [4]<->[5] de chip dap dung tai button.
+            //                Le1:2  Le3D    Le3T   Chan1:2 Chan4D  Chan4T
+            var centerXs = [   290,   125,  -118,    -290,    360,   -360];
+            var centerYs = [    85,   -90,   -90,      85,    -90,    -90];
             var scatter = 30;   //bai rai chip ±30 px quanh tam
             this.minXs = centerXs.map(function (x) { return x - scatter; });
             this.maxXs = centerXs.map(function (x) { return x + scatter; });
