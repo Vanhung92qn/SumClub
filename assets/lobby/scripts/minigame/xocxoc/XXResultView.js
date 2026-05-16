@@ -201,8 +201,8 @@
                     if (this.currentState !== state) {
                         this._showIdle();
                         this._playDealerAnim('bet');
-                        // JACKPOT: tat popup van truoc, start spin loop xuyen suot van
-                        if (this.nodeJackPot) this.nodeJackPot.active = false;
+                        // JACKPOT: tat popup + clear anim van truoc, start spin loop
+                        this._hideJackpotPopup();
                         this._startSpinLoop();
                     }
                     break;
@@ -625,19 +625,37 @@
                     if (winners[i].AccountID == myId) { myAward = winners[i].Award; break; }
                 }
                 if (myAward <= 0) return; // safety guard - chi winner moi show
+
                 if (this.lbJackpot_Hu) {
                     this.lbJackpot_Hu.string = cc.Tool.getInstance().formatNumber(myAward);
                 }
                 this.nodeJackPot.active = true;
+
+                // Spine animation: 'Appear' (mo dau, ngan, khong loop)
+                // -> tu dong queue 'idle' (loop) ngay khi Appear xong
                 if (this.animationHu) {
                     try {
                         this.animationHu.clearTracks();
                         this.animationHu.setToSetupPose();
-                        this.animationHu.setAnimation(0, 'boom', false);
-                    } catch (e) {}
+                        this.animationHu.setAnimation(0, 'Appear', false);
+                        this.animationHu.addAnimation(0, 'idle', true, 0); // loop=true, delay=0
+                    } catch (e) {
+                        console.warn('[XXResultView] anim Appear/idle err - check spine clip name', e);
+                    }
                 }
                 console.log('[XXResultView] Jackpot WIN! award=' + myAward);
             } catch (e) { console.warn('applyJackpotHit err', e); }
+        },
+
+        // Tat popup + clear anim (goi khi sang van moi)
+        _hideJackpotPopup: function () {
+            if (this.nodeJackPot) this.nodeJackPot.active = false;
+            if (this.animationHu) {
+                try {
+                    this.animationHu.clearTracks();
+                    this.animationHu.setToSetupPose();
+                } catch (e) {}
+            }
         },
     });
 }).call(this);
