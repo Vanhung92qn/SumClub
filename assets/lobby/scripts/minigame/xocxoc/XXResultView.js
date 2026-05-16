@@ -638,9 +638,9 @@
                         this.animationHu.clearTracks();
                         this.animationHu.setToSetupPose();
                         this.animationHu.setAnimation(0, 'Appear', false);
-                        this.animationHu.addAnimation(0, 'idle', true, 0); // loop=true, delay=0
+                        this.animationHu.addAnimation(0, 'Idle', true, 0); // loop=true, delay=0
                     } catch (e) {
-                        console.warn('[XXResultView] anim Appear/idle err - check spine clip name', e);
+                        console.warn('[XXResultView] anim Appear/Idle err - check spine clip name', e);
                     }
                 }
                 console.log('[XXResultView] Jackpot WIN! award=' + myAward);
