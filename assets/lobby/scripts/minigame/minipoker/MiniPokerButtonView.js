@@ -35,7 +35,9 @@ var netConfig = require('NetConfig');
 
             skSpin: sp.Skeleton,
             btnScale: cc.Button,
-            spriteScaleIcon: [cc.SpriteFrame] 
+            spriteScaleIcon: [cc.SpriteFrame],
+
+            lbSessionID: cc.Label,
         },
 
         onLoad: function () {
@@ -76,7 +78,13 @@ var netConfig = require('NetConfig');
 
             cc.MiniPokerController.getInstance().setMiniPokerButtonView(this);
 
+            if (this.skSpin) {
+                try { this.skSpin.setAnimation(0, 'iat', true); } catch (e) {}
+            }
+        },
 
+        setSessionID: function (sessionID) {
+            if (this.lbSessionID) this.lbSessionID.string = sessionID;
         },
 
         activateAllButton: function (enable) {
@@ -187,7 +195,12 @@ var netConfig = require('NetConfig');
             }
 
             var self = this;
-            this.skSpin.setAnimation(0, 'Spine', false);
+            try {
+                this.skSpin.setAnimation(0, 'at', false);
+                this.skSpin.addAnimation(0, 'iat', true, 0);
+            } catch (e) {
+                console.warn('[MiniPokerButtonView] anim at/iat err - check spine clip name', e);
+            }
 
             self.activateButton(false);
             cc.director.getScheduler().schedule(function () {
