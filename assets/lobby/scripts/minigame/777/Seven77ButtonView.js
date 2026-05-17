@@ -86,22 +86,22 @@ var gameMessage = require('GameMessage');
         },
 
         processUIByRoomId: function () {
-            this.sprite100.spriteFrame = this.seven77Image.sfChips[1];
-            this.sprite1000.spriteFrame = this.seven77Image.sfChips[1];
-            this.sprite5000.spriteFrame = this.seven77Image.sfChips[1];
-            this.sprite10000.spriteFrame = this.seven77Image.sfChips[1];
+            this.sprite100.spriteFrame = this.seven77Image.sfChipsOff[0];
+            this.sprite1000.spriteFrame = this.seven77Image.sfChipsOff[1];
+            this.sprite5000.spriteFrame = this.seven77Image.sfChipsOff[2];
+            this.sprite10000.spriteFrame = this.seven77Image.sfChipsOff[3];
             switch (this.roomId) {
                 case cc.Seven77RoomId.Room_100:
-                    this.sprite100.spriteFrame = this.seven77Image.sfChips[0];
+                    this.sprite100.spriteFrame = this.seven77Image.sfChipsOn[0];
                     break;
                 case cc.Seven77RoomId.Room_1000:
-                    this.sprite1000.spriteFrame = this.seven77Image.sfChips[0];
+                    this.sprite1000.spriteFrame = this.seven77Image.sfChipsOn[1];
                     break;
                 case cc.Seven77RoomId.Room_5000:
-                    this.sprite5000.spriteFrame = this.seven77Image.sfChips[0];
+                    this.sprite5000.spriteFrame = this.seven77Image.sfChipsOn[2];
                     break;
                 case cc.Seven77RoomId.Room_10000:
-                    this.sprite10000.spriteFrame = this.seven77Image.sfChips[0];
+                    this.sprite10000.spriteFrame = this.seven77Image.sfChipsOn[3];
                     break;
             }
         },
