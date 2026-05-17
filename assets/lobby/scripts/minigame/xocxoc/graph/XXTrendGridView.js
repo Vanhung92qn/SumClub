@@ -91,18 +91,18 @@
 
             this.resetDraw();
 
-            // Count Chan/Le tren TOAN BO history (khong gioi han 32)
+            // Snake pattern: lay 32 van moi nhat, reverse de [0] = newest
+            var total = this.maxRows * this.maxCols;
+            var recent = list.slice(-total).reverse(); // recent[0] = newest
+
+            // Count Chan/Le trong 32 van hien thi (chan + le = recent.length, max 32)
             var chan = 0, le = 0;
             var self = this;
-            list.forEach(function (item) {
+            recent.forEach(function (item) {
                 if (self.isEven(item)) chan++; else le++;
             });
             if (this.lbChan) this.lbChan.string = chan;
             if (this.lbLe) this.lbLe.string = le;
-
-            // Snake pattern: lay 32 van moi nhat, reverse de [0] = newest
-            var total = this.maxRows * this.maxCols;
-            var recent = list.slice(-total).reverse(); // recent[0] = newest
 
             for (var i = 0; i < recent.length; i++) {
                 var col = Math.floor(i / this.maxRows);  // 0..maxCols-1 (0 = newest column)
