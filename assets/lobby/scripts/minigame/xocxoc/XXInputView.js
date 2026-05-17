@@ -14,7 +14,28 @@ const players = require('PlayerData').players;
             btnChips: [cc.Button],
 
             btnX2: cc.Button,
+            spriteX2: {
+                default: null,
+                type: cc.Sprite,
+                tooltip: 'Sprite cua icon X2 (con cua btnX2). Tu doi spriteFrame khi on/off.'
+            },
+            sfX2: {
+                default: [],
+                type: [cc.SpriteFrame],
+                tooltip: '2 sprite frame: [0] = on (sang), [1] = off (toi/disabled)'
+            },
+
             btnRepeat: cc.Button,
+            spriteRepeat: {
+                default: null,
+                type: cc.Sprite,
+                tooltip: 'Sprite cua icon Repeat (con cua btnRepeat).'
+            },
+            sfRepeat: {
+                default: [],
+                type: [cc.SpriteFrame],
+                tooltip: '2 sprite frame: [0] = on, [1] = off'
+            },
 
             spriteNan: cc.Sprite,
 
@@ -364,9 +385,23 @@ const players = require('PlayerData').players;
             this.btnBetVals.forEach(function (btnBet) {
                 btnBet.interactable = enable;
             });
+            this._setBtnX2(enable);
+            this._setBtnRepeat(enable);
+        },
 
-            this.btnX2.interactable = enable;
-            this.btnRepeat.interactable = enable;
+        //Toggle btnX2: doi sprite frame + interactable (sfX2[0]=on, sfX2[1]=off)
+        _setBtnX2: function (on) {
+            if (this.btnX2) this.btnX2.interactable = !!on;
+            if (this.spriteX2 && this.sfX2 && this.sfX2.length >= 2) {
+                this.spriteX2.spriteFrame = on ? this.sfX2[0] : this.sfX2[1];
+            }
+        },
+
+        _setBtnRepeat: function (on) {
+            if (this.btnRepeat) this.btnRepeat.interactable = !!on;
+            if (this.spriteRepeat && this.sfRepeat && this.sfRepeat.length >= 2) {
+                this.spriteRepeat.spriteFrame = on ? this.sfRepeat[0] : this.sfRepeat[1];
+            }
         },
 
         //button bet val đang chon ko click duoc
@@ -636,8 +671,8 @@ const players = require('PlayerData').players;
                 if (this.indexBet === 3) this._hasBetChan12 = true;
 
                 //dat -> tat luon nut X2 + reBet
-                this.btnX2.interactable = false;
-                this.btnRepeat.interactable = false;
+                this._setBtnX2(false);
+                this._setBtnRepeat(false);
             }
         },
 
@@ -663,8 +698,8 @@ const players = require('PlayerData').players;
             var lastBetData = cc.XXController.getInstance().getLastBetData();
             if (lastBetData && lastBetData.length > 0) {
                 this.reBet(lastBetData, true);
-                this.btnX2.interactable = false;
-                this.btnRepeat.interactable = false;
+                this._setBtnX2(false);
+                this._setBtnRepeat(false);
             } else {
                 cc.PopupController.getInstance().showSlotsMessage('Không có dữ liệu đặt của phiên trước.');
             }
@@ -680,8 +715,8 @@ const players = require('PlayerData').players;
             var lastBetData = cc.XXController.getInstance().getLastBetData();
             if (lastBetData && lastBetData.length > 0) {
                 this.reBet(lastBetData);
-                this.btnX2.interactable = false;
-                this.btnRepeat.interactable = false;
+                this._setBtnX2(false);
+                this._setBtnRepeat(false);
             } else {
                 cc.PopupController.getInstance().showSlotsMessage('Không có dữ liệu đặt của phiên trước.');
             }
