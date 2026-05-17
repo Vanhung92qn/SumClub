@@ -31,6 +31,10 @@
             return this.xxSoiCauView = xxSoiCauView;
         };
 
+        XXController.prototype.setXXTrendGridView = function (xxTrendGridView) {
+            return this.xxTrendGridView = xxTrendGridView;
+        };
+
         XXController.prototype.setXXAssets = function (xxAssets) {
             return this.xxAssets = xxAssets;
         };
@@ -283,13 +287,15 @@
             return this.xxResultView.updateResult(players, result, originResult, state, openNow);
         };
 
-        //SOI CAU
+        //SOI CAU + TREND GRID (2 view song song, cung nhan game history)
         XXController.prototype.draw = function (list) {
-            return this.xxSoiCauView.draw(list);
+            if (this.xxSoiCauView) this.xxSoiCauView.draw(list);
+            if (this.xxTrendGridView) this.xxTrendGridView.draw(list);
         };
 
         XXController.prototype.resetDraw = function () {
-            return this.xxSoiCauView.resetDraw();
+            if (this.xxSoiCauView) this.xxSoiCauView.resetDraw();
+            if (this.xxTrendGridView) this.xxTrendGridView.resetDraw();
         };
 
         //CHIP POOL
