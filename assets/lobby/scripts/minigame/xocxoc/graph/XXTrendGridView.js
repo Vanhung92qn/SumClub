@@ -91,9 +91,10 @@
 
             this.resetDraw();
 
-            // Snake pattern: lay 32 van moi nhat, reverse de [0] = newest
+            // Server gui list ORDER BY SessionID DESC -> list[0] = NEWEST.
+            // Lay 32 ven moi nhat (= 32 phan tu dau).
             var total = this.maxRows * this.maxCols;
-            var recent = list.slice(-total).reverse(); // recent[0] = newest
+            var recent = list.slice(0, total); // recent[0] = newest
 
             // Count Chan/Le trong 32 van hien thi (chan + le = recent.length, max 32)
             var chan = 0, le = 0;
